@@ -35,7 +35,7 @@ def not_found(e):
 
 @app.route("/")
 def root():
-    return render_template("404.html")
+    return render_template("search.html")
 
 
 @app.route("/u<int:simu_id>")
@@ -199,11 +199,30 @@ def get_tags():
 
 @app.route("/api/images/<tag>")
 def get_images_for_tag(tag):
-	images = set()
+	images = {}
 	for room in room_data:
 		if room.get("tags") and tag in room["tags"] and room.get("image"):
-			images.add(room["image"])
-	return jsonify(sorted(list(images)))
+			image = room["image"]
+			if image not in images:
+				images[image] = {
+					'filename': image,
+					'display_name': image  # Default to filename
+				}
+
+	# Get display names for maps (check for meta:mapname tags)
+	for room_info in room_data:
+		if room_info.get('tags') and room_info.get('image'):
+			image = room_info['image']
+			if image in images:
+				for room_tag in room_info['tags']:
+					if room_tag.startswith('meta:mapname:'):
+						map_name = room_tag.replace('meta:mapname:', '')
+						images[image]['display_name'] = map_name
+						break
+
+	# Convert to list sorted by display name
+	result = [images[img] for img in sorted(images.keys(), key=lambda x: images[x]['display_name'])]
+	return jsonify(result)
 
 @app.route("/api/locations/<image>")
 def get_locations_for_image(image):
@@ -250,16 +269,34 @@ def search():
 			if room:
 				return redirect(url_for('room_page', simu_id=search.replace("u", "")))
 		room_list = {}
+		map_filter = request.form.get('map_filter')
+
+		# First, search by tags (exact match)
 		for rinfo in room_data:
 			rid = rinfo.get("id", "wut")
 			if search in rinfo.get('tags', []):
+				# Apply map filter if specified
+				if map_filter is not None:
+					if map_filter == 'UNMAPPED':
+						if rinfo.get('image'):  # Has image, skip for unmapped search
+							continue
+					elif map_filter != '' and rinfo.get('image') != map_filter:  # Specific map filter
+						continue
 				room_list[rid] = rinfo
+
+		# If no tag matches, search titles and descriptions
 		if not room_list:
 			for rinfo in room_data:
 				rid = rinfo.get('id', "wut")
-				if len(room_list) >= 100:
-					overflow = True
-					break
+				# Apply map filter if specified
+				if map_filter is not None:
+					if map_filter == 'UNMAPPED':
+						if rinfo.get('image'):  # Has image, skip for unmapped search
+							continue
+					elif map_filter != '' and rinfo.get('image') != map_filter:  # Specific map filter
+						continue
+
+				# Search in titles
 				for title in rinfo.get('title', {}):
 					title_check = re.search(re.escape(search), title, re.IGNORECASE)
 					if title_check:
@@ -267,14 +304,62 @@ def search():
 						break
 				if room_list.get(rid):
 					continue
+
+				# Search in descriptions
 				for desc in rinfo.get('description', {}):
 					desc_check = re.search(re.escape(search), desc, re.IGNORECASE)
 					if desc_check:
 						room_list[rid] = rinfo
 						break
+
+		# If single result, redirect directly
 		if len(room_list) == 1:
 			return redirect(url_for('room_page', room_id=list(room_list.keys())[0]))
-		return render_template('search.html', results=room_list, overflow=overflow)
+
+		# If more than 100 results and no map filter, group by maps
+		if len(room_list) > 100 and not map_filter:
+			map_groups = {}
+			unmapped_count = 0
+
+			for rid, rinfo in room_list.items():
+				image = rinfo.get('image')
+				if image:
+					if image not in map_groups:
+						map_groups[image] = {
+							'count': 0,
+							'display_name': image,
+							'sample_room': rid
+						}
+					map_groups[image]['count'] += 1
+				else:
+					unmapped_count += 1
+
+			# Get display names for maps (check for meta:mapname tags)
+			for room_info in room_data:
+				if room_info.get('tags') and room_info.get('image'):
+					image = room_info['image']
+					if image in map_groups:
+						for tag in room_info['tags']:
+							if tag.startswith('meta:mapname:'):
+								map_name = tag.replace('meta:mapname:', '')
+								map_groups[image]['display_name'] = map_name
+								break
+
+			return render_template('search.html', 
+								 results=None, 
+								 map_groups=map_groups, 
+								 unmapped_count=unmapped_count,
+								 search_term=search,
+								 total_results=len(room_list),
+								 overflow=False)
+
+		# Normal results display (≤100 results or map-filtered results)
+		overflow = len(room_list) > 100 and not map_filter
+		if overflow:
+			# Limit to first 100 for display
+			room_list = dict(list(room_list.items())[:100])
+
+		return render_template('search.html', results=room_list, overflow=overflow, search_term=search)
 	else:
 		return render_template('search.html', results=None, overflow=False)
 

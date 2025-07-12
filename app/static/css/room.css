@@ -1,3 +1,250 @@
+/* Accessibility improvements */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: #000;
+    color: #fff;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 10000;
+    border-radius: 4px;
+    transition: top 0.3s;
+}
+
+.skip-link:focus {
+    top: 6px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+#room-header {
+    width: fit-content;
+    flex-shrink: 0;
+}
+
+.room-info {
+    font-size: 18px;
+    color: inherit;
+    margin: 5px 0 0 0;
+    font-weight: bold;
+    text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
+}
+
+/* Enhanced focus indicators */
+*:focus {
+    outline: 2px solid #0066cc;
+    outline-offset: 2px;
+}
+
+button:focus,
+input:focus,
+select:focus,
+a:focus {
+    outline: 3px solid #0066cc;
+    outline-offset: 2px;
+}
+
+.room-tags {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Fix heading styles to be lighter and restore original hierarchy */
+h1 {
+    padding: 0;
+    margin: 0;
+    text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
+    font-weight: bold;
+}
+
+h2 {
+    font-size: 16px;
+    margin: 5px 0 5px 0;
+    color: inherit;
+}
+
+h3 {
+    padding: 0;
+    margin: 0;
+    color: inherit;
+}
+
+#nearby-rooms-heading {
+    font-size: 16px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-left: 25px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+    color: inherit;
+}
+
+#nearby-rooms-heading + p {
+    margin-bottom: 5px;
+    margin-left: 25px;
+    color: #555;
+}
+
+ul[role="list"] {
+    list-style-type: disc;
+    margin-left: 45px;
+}
+
+ul[role="list"] li {
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
+ul[role="list"] a {
+    font-weight: bold;
+    text-decoration: none;
+}
+
+ul[role="list"] a:hover,
+ul[role="list"] a:focus {
+    text-decoration: underline;
+}
+
+/* Fix excessive margins on sections and content elements */
+section {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+main {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+#main-content {
+    padding-top: 5px !important;
+    margin-top: 5px !important;
+}
+
+article {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+header {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+footer {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+/* High contrast and visual accessibility improvements */
+@media (prefers-contrast: high) {
+    *:focus {
+        outline: 4px solid #000;
+        outline-offset: 2px;
+    }
+
+    button:focus,
+    input:focus,
+    select:focus,
+    a:focus {
+        outline: 4px solid #000;
+        outline-offset: 2px;
+        background-color: #ffff00;
+    }
+
+    .highlight_box {
+        border-width: 4px;
+    }
+
+    .tag_highlight_box,
+    .location_highlight_box,
+    .both_highlight_box {
+        border-width: 4px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .highlight_box,
+    .highlight_box::before,
+    .highlight_box::after {
+        animation: none;
+    }
+
+    .highlight_box_example,
+    .highlight_box_example::before,
+    .highlight_box_example::after {
+        animation: none;
+    }
+
+    .skip-link {
+        transition: none;
+    }
+}
+
+/* Better contrast for room information */
+.room-location {
+    font-size: 14px;
+    color: #666;
+    margin: 5px 0 0 0;
+    font-weight: bold;
+}
+
+th[scope="row"] {
+    background-color: #f5f5f5;
+    font-weight: bold;
+    text-align: left;
+    padding: 8px;
+    width: 120px;
+}
+
+/* Enhanced table accessibility */
+table caption {
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-align: left;
+}
+
+/* Better error and status styling */
+[role="alert"],
+[role="status"] {
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 4px;
+    border: 2px solid;
+}
+
+[role="alert"] {
+    background-color: #fef2f2;
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+[role="status"] {
+    background-color: #fffbeb;
+    border-color: #d97706;
+    color: #92400e;
+}
+
+/* Loading states */
+select[disabled] {
+    background-color: #f9f9f9;
+    color: #666;
+    cursor: not-allowed;
+}
+
 .highlight_box {
     padding: 0;
     position: absolute;
@@ -26,7 +273,7 @@
 }
 
 #mapimage {
-    max-width: 1000;
+    max-width: 700px;
     z-index: 1;
     position: relative;
     cursor: pointer;
@@ -51,7 +298,7 @@
 }
 
 #image_wrapper {
-    padding: 1px 25px 25px 25px;
+    padding: 1px 25px 5px 25px;
     position: relative;
 }
 
@@ -61,13 +308,14 @@
 
 #after_image {
     padding: 0;
+    margin-top: 5px;
 }
 
 .after_table_divs {
     padding-bottom: 0;
     padding-top: 0;
-    padding-left: 25;
-    padding-right: 25;
+    padding-left: 25px;
+    padding-right: 25px;
 }
 
 .after_tables {
@@ -90,16 +338,14 @@ table tr td {
     border: 1px solid;
 }
 
-h3 {
-    padding: 0;
-    margin: 0;
+#full_info_div,
+#nearby_rooms_div {
+    padding-left: 25px;
+    margin-top: 5px;
 }
 
-#full_info_div {
-    padding-left: 25;
-}
-
-#full_info_details {
+#full_info_details,
+#nearby_rooms_details {
     width: 50%;
 }
 
@@ -110,11 +356,12 @@ h3 {
 
 #updated_at {
     padding: 0;
-    margin: 25;
+    margin: 5px 25px;
 }
 
+/* Fix navigation header padding */
 #navigation_header {
-    padding: 2px 25px 0px 25px;
+    padding: 8px 25px 8px 25px;
     background-color: rgba(0, 0, 0, 0.02);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
@@ -125,12 +372,13 @@ h3 {
 
 #title_row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    justify-content: flex-start;
     margin-bottom: 5px;
     gap: 15px;
 }
 
-#title_row h3 {
+#title_row h1 {
     margin: 0;
     text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
     font-weight: bold;
@@ -167,6 +415,9 @@ h3 {
     display: flex;
     align-items: center;
     gap: 2px;
+    margin-top: 20px;
+    flex-shrink: 0;
+    margin-left: 0;
 }
 
 #opacity_toggle input {
@@ -326,17 +577,21 @@ h3 {
 #help_icon {
     background-color: #007bff;
     color: white;
+    border: none;
     border-radius: 50%;
     width: 16px;
     height: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: bold;
     cursor: pointer;
     margin-left: 5px;
     user-select: none;
+    padding: 0;
+    min-width: 16px;
+    min-height: 16px;
 }
 
 #help_icon:hover {
@@ -356,30 +611,42 @@ h3 {
     justify-content: center;
 }
 
+/* Restore smaller help popup */
 #help_popup_content {
     background-color: #11191f;
     color: white;
-    padding: 20px;
-    border-radius: 8px;
+    padding: 15px;
+    border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     position: relative;
-    max-width: 300px;
+    max-width: 280px;
+    white-space: nowrap;
 }
 
 #help_close {
     position: absolute;
     top: 8px;
     right: 12px;
-    font-size: 20px;
+    font-size: 16px;
     cursor: pointer;
     color: #ccc;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
 }
 
-#help_close:hover {
+#help_close:hover,
+#help_close:focus {
     color: white;
+    outline: 2px solid #fff;
 }
 
-#help_popup h4 {
+#help_popup h2 {
     margin: 0 0 15px 0;
     font-size: 16px;
 }
@@ -497,5 +764,197 @@ h3 {
     }
     100% {
         border-color: palevioletred;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .room-ids,
+    .room-location {
+        color: #ccc;
+    }
+
+    .room-tags {
+        color: #aaa;
+    }
+
+    th[scope="row"] {
+        background-color: #2a2a2a;
+        color: #fff;
+    }
+
+    [role="alert"] {
+        background-color: #2d1b1b;
+        border-color: #ef4444;
+        color: #fecaca;
+    }
+
+    [role="status"] {
+        background-color: #2d2416;
+        border-color: #f59e0b;
+        color: #fcd34d;
+    }
+}
+
+/* Compact and accessible search results styling */
+.search-results-list {
+    margin-top: 8px;
+    list-style: none;
+    padding: 0;
+}
+
+.search-result-item {
+    margin-bottom: 2px;
+    border-bottom: 1px solid #eee;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.result-link {
+    display: block;
+    padding: 6px 8px;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 3px;
+    transition: background-color 0.15s ease;
+}
+
+.result-link:hover,
+.result-link:focus {
+    background-color: #f0f8ff;
+    text-decoration: none;
+    outline: 2px solid #0066cc;
+    outline-offset: 1px;
+}
+
+.result-title {
+    display: block;
+    font-weight: bold;
+    color: #0066cc;
+    font-size: 14px;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+.result-meta {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.1;
+}
+
+/* Dark mode support for search results */
+@media (prefers-color-scheme: dark) {
+    .search-result-item {
+        border-bottom-color: #444;
+    }
+
+    .result-link:hover,
+    .result-link:focus {
+        background-color: #2a2a2a;
+        outline-color: #66b3ff;
+    }
+
+    .result-title {
+        color: #66b3ff;
+    }
+
+    .result-meta {
+        color: #bbb;
+    }
+}
+
+/* Map groups styling for large result sets - zero spacing */
+.map-groups-container {
+    margin: 5px 0 0 0;
+    padding: 0;
+}
+
+.map-group-form {
+    margin: 0;
+    padding: 0;
+    display: block;
+}
+
+.map-group-button {
+    display: block;
+    width: 100%;
+    padding: 4px 6px;
+    margin: 0;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0;
+    background-color: #f9f9f9;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+.map-group-form:first-child .map-group-button {
+    border-top: 1px solid #ddd;
+    border-radius: 2px 2px 0 0;
+}
+
+.map-group-form:last-child .map-group-button {
+    border-radius: 0 0 2px 2px;
+}
+
+.map-group-button:hover,
+.map-group-button:focus {
+    background-color: #e6f3ff;
+    border-color: #0066cc;
+    outline: 2px solid #0066cc;
+    outline-offset: 1px;
+}
+
+.map-name {
+    font-weight: bold;
+    color: #0066cc;
+}
+
+.map-count {
+    font-size: 11px;
+    color: #666;
+    margin-left: 2px;
+}
+
+.unmapped-button .map-name {
+    color: #d97706;
+}
+
+/* Dark mode support for map groups */
+@media (prefers-color-scheme: dark) {
+    .map-groups-list {
+        border-color: #444;
+    }
+
+    .map-group-button {
+        background-color: #2a2a2a;
+        border-color: #555;
+    }
+
+    .map-group-button:hover,
+    .map-group-button:focus {
+        background-color: #333;
+        border-color: #66b3ff;
+        outline-color: #66b3ff;
+    }
+
+    .map-name {
+        color: #66b3ff;
+    }
+
+    .map-count {
+        color: #bbb;
+    }
+
+    .unmapped-button .map-name {
+        color: #fbbf24;
     }
 }

@@ -1,4 +1,5 @@
-<html>
+<!DOCTYPE html>
+<html lang="en-US">
   <head>
     <style>
       div { padding:10}
@@ -12,10 +13,15 @@
           margin-bottom: 0px !important;
       }
     </style>
-    <title>lich map room db</title>
+    <title>Search - Lich Map Room Database</title>
     <link rel="stylesheet" href="static/css/pico.min.css">
+    <link rel="stylesheet" href="static/css/room.css">
   </head>
   <body>
-  {% include "search_block.html" %}
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <main id="main-content" role="main" style="padding: 15px; margin-top: 0;">
+      <h1 style="margin-top: 0;">Lich Map Room Database Search</h1>
+      {% include "search_block.html" %}
+    </main>
   </body>
 </html>

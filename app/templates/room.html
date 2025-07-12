@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en-US">
     <head>
             <title>{{ room.title[0] }} - Lich: {{ room.id }} - UID: {{ room.uid | first }}</title>
@@ -18,10 +19,19 @@
             </style>
     </head>
     <body>
+        <!-- Skip links for screen readers -->
+        <a href="#main-content" class="skip-link">Skip to main content</a>
+        <a href="#navigation" class="skip-link">Skip to navigation</a>
+        <a href="#search_section" class="skip-link">Skip to search</a>
+
+        <!-- Live regions for dynamic announcements -->
+        <div id="announcement-region" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+        <div id="alert-region" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
         <script src="static/js/prism.js"></script>
+        <nav id="navigation" role="navigation" aria-label="Map navigation">
         <div id="navigation_header">
             <div id="map_navigation">
-                <select id="map_dropdown" onchange="navigateToMap()">
+                <select id="map_dropdown" onchange="navigateToMap()" aria-label="Select a map to navigate to">
                     <option value="">Navigate to map...</option>
                     {% for category, maps in available_maps %}
                     <optgroup label="{{ category }}">
@@ -32,7 +42,7 @@
                     {% endfor %}
                 </select>
                 {% if adjacent_maps %}
-                <select id="adjacent_map_dropdown" onchange="navigateToAdjacentMap()">
+                <select id="adjacent_map_dropdown" onchange="navigateToAdjacentMap()" aria-label="Select an adjacent map">
                     <option value="">Adjacent maps...</option>
                     {% for map_image, map_data in adjacent_maps %}
                     <option value="{{ map_data.room_id }}">{{ map_data.display_name }}</option>
@@ -42,9 +52,13 @@
                 <a href="#search_section" id="search_link">Search...</a>
             </div>
         </div>
-        <div id="header">
+        </nav>
+        <header id="header" role="banner">
                 <div id="title_row">
-                    <h3>{{ room.title[0] }} - Lich: {{ room.id }} - UID: u{{ room.uid | first }}</h3>
+                    <div id="room-header">
+                        <h1>{{ room.title[0] }}</h1>
+                        <p class="room-info">{{ room.id }} | u{{ room.uid | first }}{% if room.get('location') %} | {{ room.location }}{% endif %}</p>
+                    </div>
                     {% if room.image %}
                     <div id="opacity_toggle">
                         <input type="checkbox" id="opacity_checkbox" onchange="toggleOpacity()">
@@ -55,28 +69,30 @@
                 {% if room.image and image_tags %}
                 <div id="tag_selector">
                     <label for="tag_dropdown">Highlight tag:</label>
-                    <select id="tag_dropdown" onchange="highlightRooms()">
+                    <select id="tag_dropdown" onchange="highlightRooms()" aria-describedby="tag-dropdown-help">
                         <option value="">Select a tag...</option>
                         {% for tag in image_tags %}
                         <option value="{{ tag }}">{{ tag }}</option>
                         {% endfor %}
                     </select>
                     <label for="location_dropdown">Highlight location:</label>
-                    <select id="location_dropdown" onchange="highlightRooms()">
+                    <select id="location_dropdown" onchange="highlightRooms()" aria-describedby="location-dropdown-help">
                         <option value="">Select a location...</option>
                         {% for location in image_locations %}
                         <option value="{{ location }}">{{ location }}</option>
                         {% endfor %}
                     </select>
-                    <span id="help_icon" onclick="showHelpPopup()">?</span>
+                    <button id="help_icon" onclick="showHelpPopup()" type="button" aria-label="Show help for room highlighting" tabindex="0">?</button>
+                    <div id="tag-dropdown-help" class="sr-only">Select a tag to highlight all rooms on this map that have that tag</div>
+                    <div id="location-dropdown-help" class="sr-only">Select a location to highlight all rooms in that specific area of the map</div>
                 </div>
                 {% endif %}
-        </div>
+        </header>
         {% if room.image %}
-        <div id="help_popup" style="display: none;">
+        <div id="help_popup" style="display: none;" role="dialog" aria-labelledby="help-title" aria-modal="true">
             <div id="help_popup_content">
-                <span id="help_close" onclick="hideHelpPopup()">×</span>
-                <h4>Room Highlight Examples</h4>
+                <span id="help_close" onclick="hideHelpPopup()" role="button" tabindex="0" aria-label="Close help dialog">×</span>
+                <h2 id="help-title">Room Highlight Examples</h2>
                 <div class="help_example">
                     <div class="help_highlight highlight_box_example"></div>
                     <span>Current room</span>
@@ -95,32 +111,52 @@
                 </div>
             </div>
         </div>
+        <section id="map-section" role="img" aria-labelledby="map-description">
         <div id="image_wrapper">
             <div id="highlight_box" class="highlight_box">
                 <!-- drawing highlight box-->
             </div>
-            <img id="mapimage" src="{{url_for('static', filename='maps/' + room.image)}}">
+            <img id="mapimage" src="{{url_for('static', filename='maps/' + room.image)}}" alt="Map of {{ room.image.replace('_', ' ').replace('.png', '').replace('.jpg', '').replace('.gif', '') }} showing room {{ room.title[0] }}. Click on rooms to navigate or use the nearby rooms list below for accessible navigation." role="img" tabindex="0">
+            <div id="map-description" class="sr-only">
+                Interactive map showing {{ room.title[0] }} and connected rooms. Use tab to navigate to room connections below or use the text-based navigation.
+            </div>
         </div>
+        </section>
         {% endif %}
+        <main id="main-content" role="main">
         <div id=after_image>
+            <section aria-labelledby="room-info-heading">
+                <h2 id="room-info-heading" class="sr-only">Room Information</h2>
             <div id=desc_table_div class=after_table_divs>
-                <table id=desc_table class=after_tables>
+                <table id=desc_table class=after_tables role="table" aria-label="Room details">
+                    <caption class="sr-only">Room description and navigation information for {{ room.title[0] }}</caption>
                     <tr>
-                        <td colspan=10>{{ (room.description | default(["None"]))[0] }}</td>
+                        <th scope="row">Description:</th>
+                        <td colspan=9>{{ (room.description | default(["None"]))[0] }}</td>
                     </tr>
                     <tr>
-                        <td colspan=10>{{ (room.paths | default(["Obvious paths: none"]))[0] }}</td>
+                        <th scope="row">Obvious Paths:</th>
+                        <td colspan=9>{{ (room.paths | default(["Obvious paths: none"]))[0] }}</td>
                     </tr>
+                    {% if room.image %}
                     <tr>
-                        <td colspan=10>Map: {{ room.image }}</td>
+                        <th scope="row">Map Image:</th>
+                        <td colspan=9>{{ room.image }}</td>
                     </tr>
+                    {% endif %}
+                    {% if room.get('tags') %}
+                    <tr>
+                        <th scope="row">Tags:</th>
+                        <td colspan=9 aria-label="Room tags">{{ room.tags | join(', ') }}</td>
+                    </tr>
+                    {% endif %}
                     <tr><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"></tr>
                     <tr>
-                        <th colspan=9>
-                            Exit
+                        <th colspan=9 scope="col">
+                            Exit Command
                         </th>
-                        <th>
-                            Connecting Room
+                        <th scope="col">
+                            Connecting Room ID
                         </th>
                     </tr>
                 {% for room_exit, room_way in room.wayto.items() %}
@@ -129,27 +165,62 @@
                             {{ room_way }}
                         </td>
                         <td>
-                            <a href="{{ room_exit }}">{{ room_exit }}</a>
+                            <a href="{{ room_exit }}" aria-label="Go to room {{ room_exit }}">{{ room_exit }}</a>
                         </td>
                     </tr>
                 {% endfor %}
                 </table>
             </div>
+            </section>
+
+            <section aria-labelledby="full-info-heading">
+                <h2 id="full-info-heading" class="sr-only">Full Room Data</h2>
             <div id=full_info_div>
                 <details id=full_info_details>
-                    <summary>Full Room Info</summary>
+                    <summary>Full Room Info (JSON Data)</summary>
                     <article id=full_info_article>
-                        <code id=full_info_code class="language-json">{{ room_json_pretty }}</code>
+                        <code id=full_info_code class="language-json" role="text" aria-label="Room data in JSON format">{{ room_json_pretty }}</code>
                     </article>
                 </details>
             </div>
-            <div id="search_section" style="padding-left: 15px;">
+            </section>
+
+            {% if room.image and same_image_rooms %}
+            <section aria-labelledby="nearby-rooms-heading">
+                <h2 id="nearby-rooms-heading" class="sr-only">Nearby Rooms Data</h2>
+            <div id="nearby_rooms_div">
+                <details id="nearby_rooms_details">
+                    <summary>Nearby Rooms on This Map</summary>
+                    <article id="nearby_rooms_article">
+                        <p>The following rooms are also shown on this map and can be clicked or navigated to:</p>
+                        <ul role="list" aria-label="List of nearby rooms">
+                        {% for nearby_room in same_image_rooms %}
+                            {% if nearby_room.id != room.id %}
+                            <li>
+                                <a href="/{{ nearby_room.id }}" aria-label="Navigate to {{ nearby_room.title[0] }}, room ID {{ nearby_room.id }}">
+                                    {{ nearby_room.title[0] }} (ID: {{ nearby_room.id }})
+                                </a>
+                                {% if nearby_room.get('location') %}
+                                    - Location: {{ nearby_room.location }}
+                                {% endif %}
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        </ul>
+                    </article>
+                </details>
+            </div>
+            </section>
+            {% endif %}
+            <section id="search_section" style="padding-left: 25px; margin-top: 5px;" aria-labelledby="search-heading">
+                <h2 id="search-heading">Search Rooms</h2>
                 {% with results=None, overflow=False %} {% include "search_block.html" %} {% endwith %}
-            </div>
-            <div id=updated_at>
+            </section>
+            <footer id=updated_at role="contentinfo">
                 <small><i>MapDB last updated: {{ updated_at }}</i></small>
-            </div>
+            </footer>
         </div>
+        </main>
 
         <script>
             // Room data for tag highlighting
@@ -195,7 +266,10 @@
                 const existingHighlights = document.querySelectorAll('.tag_highlight_box, .location_highlight_box, .both_highlight_box');
                 existingHighlights.forEach(box => box.remove());
 
-                if (!selectedTag && !selectedLocation) return;
+                if (!selectedTag && !selectedLocation) {
+                    announceToScreenReader('Room highlights cleared');
+                    return;
+                }
 
                 // Get the original image dimensions
                 const imgElement = document.getElementById('mapimage');
@@ -248,6 +322,17 @@
                         }
                     }
                 });
+
+                // Announce the highlighting to screen readers
+                let announcement = '';
+                if (selectedTag && selectedLocation) {
+                    announcement = `Highlighted rooms with tag "${selectedTag}" in location "${selectedLocation}"`;
+                } else if (selectedTag) {
+                    announcement = `Highlighted rooms with tag "${selectedTag}"`;
+                } else if (selectedLocation) {
+                    announcement = `Highlighted rooms in location "${selectedLocation}"`;
+                }
+                announceToScreenReader(announcement);
             }
 
             function toggleOpacity() {
@@ -266,6 +351,8 @@
                 const selectedRoomId = dropdown.value;
 
                 if (selectedRoomId) {
+                    const selectedText = dropdown.options[dropdown.selectedIndex].text;
+                    announceToScreenReader(`Navigating to map: ${selectedText}`);
                     window.location.href = '/' + selectedRoomId;
                 }
             }
@@ -275,19 +362,29 @@
                 const selectedRoomId = dropdown.value;
 
                 if (selectedRoomId) {
+                    const selectedText = dropdown.options[dropdown.selectedIndex].text;
+                    announceToScreenReader(`Navigating to adjacent map: ${selectedText}`);
                     window.location.href = '/' + selectedRoomId;
                 }
             }
 
             function showHelpPopup() {
-                document.getElementById('help_popup').style.display = 'flex';
+                const popup = document.getElementById('help_popup');
+                popup.style.display = 'flex';
+                // Focus management for accessibility
+                const closeButton = document.getElementById('help_close');
+                closeButton.focus();
             }
 
             function hideHelpPopup() {
-                document.getElementById('help_popup').style.display = 'none';
+                const popup = document.getElementById('help_popup');
+                popup.style.display = 'none';
+                // Return focus to help icon
+                const helpIcon = document.getElementById('help_icon');
+                if (helpIcon) helpIcon.focus();
             }
 
-            // Hide popup when clicking outside
+            // Hide popup when clicking outside or pressing Escape
             document.addEventListener('click', function(event) {
                 const popup = document.getElementById('help_popup');
                 const popupContent = document.getElementById('help_popup_content');
@@ -299,6 +396,42 @@
                     hideHelpPopup();
                 }
             });
+
+            // Keyboard navigation for help dialog
+            document.addEventListener('keydown', function(event) {
+                const popup = document.getElementById('help_popup');
+                if (popup && popup.style.display === 'flex') {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        hideHelpPopup();
+                    }
+                    // Trap focus within dialog
+                    const focusableElements = popup.querySelectorAll('[tabindex="0"], button, [href]');
+                    const firstElement = focusableElements[0];
+                    const lastElement = focusableElements[focusableElements.length - 1];
+
+                    if (event.key === 'Tab') {
+                        if (event.shiftKey && document.activeElement === firstElement) {
+                            event.preventDefault();
+                            lastElement.focus();
+                        } else if (!event.shiftKey && document.activeElement === lastElement) {
+                            event.preventDefault();
+                            firstElement.focus();
+                        }
+                    }
+                }
+            });
+
+            // Add keyboard support for help close button
+            const helpClose = document.getElementById('help_close');
+            if (helpClose) {
+                helpClose.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        hideHelpPopup();
+                    }
+                });
+            }
 
             function handleMapClick(event) {
                 // Get click coordinates relative to the image
@@ -369,6 +502,88 @@
 
                 window.location.href = url;
             }
+
+            // Screen reader announcement utility
+            function announceToScreenReader(message, isAlert = false) {
+                const regionId = isAlert ? 'alert-region' : 'announcement-region';
+                const region = document.getElementById(regionId);
+                if (region) {
+                    region.textContent = message;
+                    // Clear after announcement
+                    setTimeout(() => {
+                        region.textContent = '';
+                    }, 1000);
+                }
+            }
+
+            // Add text-based room navigation for accessibility
+            function announceRoomChange(roomTitle, roomId) {
+                announceToScreenReader(`Navigated to room: ${roomTitle}, ID: ${roomId}`);
+            }
+
+            // Enhanced keyboard navigation
+            document.addEventListener('keydown', function(event) {
+                const mapImage = document.getElementById('mapimage');
+
+                // Global keyboard shortcuts
+                if (event.altKey) {
+                    switch(event.key) {
+                        case 's':
+                            event.preventDefault();
+                            const searchInput = document.querySelector('#search, #tagInput');
+                            if (searchInput) {
+                                searchInput.focus();
+                                announceToScreenReader('Focused on search input');
+                            }
+                            break;
+                        case 'n':
+                            event.preventDefault();
+                            const mapDropdown = document.getElementById('map_dropdown');
+                            if (mapDropdown) {
+                                mapDropdown.focus();
+                                announceToScreenReader('Focused on map navigation');
+                            }
+                            break;
+                        case 'r':
+                            event.preventDefault();
+                            const roomTable = document.getElementById('desc_table');
+                            if (roomTable) {
+                                roomTable.focus();
+                                announceToScreenReader('Focused on room information table');
+                            }
+                            break;
+                    }
+                }
+
+                // Map-specific keyboard handling
+                if (document.activeElement === mapImage) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        announceToScreenReader('Interactive map: Use the room connections table below, nearby rooms list, or search to navigate. Map clicks require mouse interaction.', true);
+                    }
+                }
+            });
+
+            // Add keyboard shortcut information
+            window.addEventListener('load', function() {
+                // Add a keyboard shortcuts help section
+                const shortcutsInfo = document.createElement('div');
+                shortcutsInfo.id = 'keyboard-shortcuts-info';
+                shortcutsInfo.className = 'sr-only';
+                shortcutsInfo.setAttribute('aria-label', 'Keyboard shortcuts');
+                shortcutsInfo.innerHTML = `
+                    <h2>Keyboard Shortcuts</h2>
+                    <ul>
+                        <li>Alt + S: Focus search input</li>
+                        <li>Alt + N: Focus map navigation</li>
+                        <li>Alt + R: Focus room information</li>
+                        <li>Tab: Navigate through interactive elements</li>
+                        <li>Enter/Space on map: Get navigation instructions</li>
+                        <li>Escape in dialogs: Close dialog</li>
+                    </ul>
+                `;
+                document.body.appendChild(shortcutsInfo);
+            });
         </script>
     </body>
 </html>

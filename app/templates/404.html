@@ -1,4 +1,5 @@
-<html>
+<!DOCTYPE html>
+<html lang="en-US">
     <head>
         <style>
             div { padding:10}
@@ -12,18 +13,29 @@
                 margin-bottom: 0px !important;
             }
         </style>
-        <title>Lich map room DB</title>
+        <title>404 Not Found - Lich Map Room Database</title>
         <link rel="stylesheet" href="static/css/pico.min.css">
+        <link rel="stylesheet" href="static/css/room.css">
     </head>
     <body>
-        <div>
+        <a href="#main-content" class="skip-link">Skip to main content</a>
+        <main id="main-content" role="main">
+            <h1>404 - Page Not Found</h1>
             {% if noroom %}
-            <div>Room not found!</div>        
+            <p><strong>Room not found!</strong></p>        
             {% endif %}
-            <div>Hey, go to {{ request.host_url }}[room id] to view a room</div>
-            <div>Like:
-            <div><a href="{{ request.host_url }}228">{{ request.host_url }}228</a><br><a href="{{ request.host_url }}u13100042">{{ request.host_url }}u13100042</a></div>
-        </div>
-        {% with results=None, overflow=False %} {% include "search_block.html" %} {% endwith %}
+            <p>To view a room, go to {{ request.host_url }}[room id]</p>
+            <section aria-labelledby="examples-heading">
+                <h2 id="examples-heading">Examples:</h2>
+                <ul>
+                    <li><a href="{{ request.host_url }}228" aria-label="Example room 228">{{ request.host_url }}228</a></li>
+                    <li><a href="{{ request.host_url }}u13100042" aria-label="Example room with UID u13100042">{{ request.host_url }}u13100042</a></li>
+                </ul>
+            </section>
+            <section aria-labelledby="search-heading">
+                <h2 id="search-heading">Search for a Room</h2>
+                {% with results=None, overflow=False %} {% include "search_block.html" %} {% endwith %}
+            </section>
+        </main>
     </body>
 </html>
