@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lich Map Room Database</title>
+    
+    <!-- Favicons (existing) -->
+    <link rel="manifest" href="static/icons/site.webmanifest">
+    <link rel="icon" href="static/icons/favicon.ico" type="image/x-icon">
+    <link rel="icon" type="image/png" sizes="32x32" href="static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="static/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="static/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#11191f">
+    
+    <!-- Styles (existing) -->
+    <link rel="stylesheet" href="static/css/pico.min.css">
+    <link rel="stylesheet" href="static/css/room.css">
+    
+    <style>
+        /* Loading state */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--background-color, #11191f);
+            color: var(--color, #fff);
+            z-index: 9999;
+        }
+        #loading-screen.hidden { display: none; }
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-progress { margin-top: 16px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" role="status" aria-live="polite">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <div id="loading-progress">Loading room data...</div>
+    </div>
+    
+    <!-- App Container -->
+    <div id="app" class="hidden"></div>
+    
+    <!-- Live regions for accessibility -->
+    <div id="announcement-region" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    <div id="alert-region" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+    
+    <!-- Scripts -->
+    <script src="static/js/prism.js"></script>
+    <script type="module" src="static/js/app.js"></script>
+</body>
+</html>
