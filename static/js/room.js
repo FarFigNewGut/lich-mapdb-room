@@ -110,11 +110,16 @@ function buildRoomHTML(room, queryParams) {
         <main id="main-content" role="main">
             <div id="after_image">
                 ${buildRoomInfoSection(room)}
-                ${buildFullInfoSection(room)}
-                ${room.image && sameImageRooms.length > 1 ? buildNearbyRoomsSection(room) : ''}
-                <section id="search_section" style="padding-left: 25px; margin-top: 5px;" aria-labelledby="search-heading">
-                    <h2 id="search-heading">Search Rooms</h2>
-                    <p><a href="#/search">Go to full search page</a></p>
+                <div class="collapsibles-row">
+                    ${room.image && sameImageRooms.length > 1 ? buildNearbyRoomsSection(room) : ''}
+                    ${buildFullInfoSection(room)}
+                </div>
+                <section id="search_section" class="inline-search-section" aria-labelledby="search-heading">
+                    <h2 id="search-heading" class="sr-only">Search Rooms</h2>
+                    <form class="inline-search">
+                        <input type="text" placeholder="Search for room..." aria-label="Search for room">
+                        <button type="submit">Go</button>
+                    </form>
                 </section>
                 <footer id="updated_at" role="contentinfo">
                     <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
@@ -213,16 +218,16 @@ function buildMapSection(room) {
 function buildRoomInfoSection(room) {
     const description = room.description?.[0] || 'None';
     const paths = room.paths?.[0] || 'Obvious paths: none';
-    const tags = room.tags?.join(', ') || '';
     
     let exitsHTML = '';
     if (room.wayto) {
         for (const [exitRoomId, exitCommand] of Object.entries(room.wayto)) {
             exitsHTML += `
-                <tr>
-                    <td colspan="9">${escapeHtml(exitCommand)}</td>
-                    <td><a href="#/room/${exitRoomId}" aria-label="Go to room ${exitRoomId}">${exitRoomId}</a></td>
-                </tr>
+                <a href="#/room/${exitRoomId}" class="exit-item">
+                    <span class="exit-command">go ${escapeHtml(exitCommand)}</span>
+                    <span class="exit-arrow">&rarr;</span>
+                    <span class="exit-id">${exitRoomId}</span>
+                </a>
             `;
         }
     }
@@ -230,36 +235,23 @@ function buildRoomInfoSection(room) {
     return `
         <section aria-labelledby="room-info-heading">
             <h2 id="room-info-heading" class="sr-only">Room Information</h2>
-            <div id="desc_table_div" class="after_table_divs">
-                <table id="desc_table" class="after_tables" role="table" aria-label="Room details">
-                    <caption class="sr-only">Room description and navigation information for ${escapeHtml(room.title[0])}</caption>
-                    <tr>
-                        <th scope="row">Description:</th>
-                        <td colspan="9">${escapeHtml(description)}</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Obvious Paths:</th>
-                        <td colspan="9">${escapeHtml(paths)}</td>
-                    </tr>
-                    ${room.image ? `
-                    <tr>
-                        <th scope="row">Map Image:</th>
-                        <td colspan="9">${escapeHtml(room.image)}</td>
-                    </tr>
-                    ` : ''}
-                    ${tags ? `
-                    <tr>
-                        <th scope="row">Tags:</th>
-                        <td colspan="9" aria-label="Room tags">${escapeHtml(tags)}</td>
-                    </tr>
-                    ` : ''}
-                    <tr><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"><td bgcolor="#bbc6ce"></tr>
-                    <tr>
-                        <th colspan="9" scope="col">Exit Command</th>
-                        <th scope="col">Connecting Room ID</th>
-                    </tr>
+            <div class="room-card">
+                <p class="room-description">${escapeHtml(description)}</p>
+                <div class="room-paths">
+                    <strong>Obvious paths:</strong> ${escapeHtml(paths)}
+                </div>
+                ${room.tags ? `
+                <div class="room-tags-list" aria-label="Room tags">
+                    ${room.tags.map(tag => `<span class="tag-badge">${escapeHtml(tag)}</span>`).join('')}
+                </div>
+                ` : ''}
+            </div>
+            
+            <div class="exits-section">
+                <h3 class="exits-heading">EXITS</h3>
+                <div class="exits-grid">
                     ${exitsHTML}
-                </table>
+                </div>
             </div>
         </section>
     `;
@@ -428,6 +420,17 @@ function initRoomInteractions(room, queryParams) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 hideHelpPopup();
+            }
+        });
+    }
+
+    const inlineSearchForm = document.querySelector('.inline-search');
+    if (inlineSearchForm) {
+        inlineSearchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = inlineSearchForm.querySelector('input');
+            if (input.value.trim()) {
+                navigate(`/search?q=${encodeURIComponent(input.value.trim())}`);
             }
         });
     }
