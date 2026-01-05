@@ -32,11 +32,11 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add app/data/map.json
-          git add app/data/updated_at
-          git add app/static/maps
+          git add data/map.json
+          git add data/updated_at
+          git add static/maps
           git add Gemfile.lock
-          if (git status --porcelain | wc -l | grep 0 > /dev/null);then echo "No changes to commit";else git commit -m "Daily automatic map update";fi
+          if [ -z "$(git status --porcelain)" ]; then echo "No changes to commit";else git commit -m "Daily automatic map update";fi
 
       - name: Push changes
         uses: ad-m/github-push-action@master

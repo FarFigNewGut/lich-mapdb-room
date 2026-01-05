@@ -1,4 +1,4 @@
-import { getRoomById, getRoomsOnMap, getMapCategories, getAllRooms } from './data.js';
+import { getRoomById, getRoomsOnMap, getMapCategories, getAllRooms, getAllTags } from './data.js';
 import { navigate } from './router.js';
 import { announceToScreenReader, escapeHtml, getUpdatedAt } from './utils.js';
 
@@ -78,31 +78,36 @@ function buildRoomHTML(room, queryParams) {
         <a href="#navigation" class="skip-link">Skip to navigation</a>
         <a href="#search_section" class="skip-link">Skip to search</a>
         
-        <nav id="navigation" role="navigation" aria-label="Map navigation">
-            <div id="navigation_header">
-                <div id="map_navigation">
-                    ${buildMapDropdown(mapCategories)}
-                    ${adjacentMaps.length ? buildAdjacentMapDropdown(adjacentMaps) : ''}
-                    <a href="#search_section" id="search_link">Search...</a>
+        <div id="sticky-header">
+            <nav id="navigation" role="navigation" aria-label="Map navigation">
+                <div id="navigation_header">
+                    <div id="map_navigation">
+                        ${buildMapDropdown(mapCategories)}
+                        ${adjacentMaps.length ? buildAdjacentMapDropdown(adjacentMaps) : ''}
+                    <span id="search_link" title="Search for another room" role="button" tabindex="0">&#128269;</span>
+                    <span id="copy_link_btn" title="Copy link for this room" role="button" tabindex="0" aria-label="Copy link for this room">&#128279;</span>
+                    </div>
                 </div>
-            </div>
-        </nav>
+            </nav>
+            
+            <header id="header" role="banner">
+                <div id="title_row">
+                    <div id="room-header">
+                        <h1>${escapeHtml(room.title[0])}</h1>
+                        <p class="room-info">${room.id} | u${room.uid?.[0] || 'N/A'}${room.location ? ` | ${escapeHtml(room.location)}` : ''}</p>
+                    </div>
+                    ${room.image ? `
+                    <div id="opacity_toggle">
+                        <input type="checkbox" id="opacity_checkbox">
+                        <label for="opacity_checkbox">Toggle opacity</label>
+                    </div>
+                    ` : ''}
+                </div>
+                ${room.image && imageTags.length ? buildTagSelector(imageTags, imageLocations) : ''}
+            </header>
+        </div>
         
-        <header id="header" role="banner">
-            <div id="title_row">
-                <div id="room-header">
-                    <h1>${escapeHtml(room.title[0])}</h1>
-                    <p class="room-info">${room.id} | u${room.uid?.[0] || 'N/A'}${room.location ? ` | ${escapeHtml(room.location)}` : ''}</p>
-                </div>
-                ${room.image ? `
-                <div id="opacity_toggle">
-                    <input type="checkbox" id="opacity_checkbox">
-                    <label for="opacity_checkbox">Toggle opacity</label>
-                </div>
-                ` : ''}
-            </div>
-            ${room.image && imageTags.length ? buildTagSelector(imageTags, imageLocations) : ''}
-        </header>
+        <div id="copy_link_popup" role="alert" aria-live="polite">Link copied to clipboard!</div>
         
         ${room.image ? buildHelpPopup() : ''}
         ${room.image ? buildMapSection(room) : ''}
@@ -111,15 +116,12 @@ function buildRoomHTML(room, queryParams) {
             <div id="after_image">
                 ${buildRoomInfoSection(room)}
                 <div class="collapsibles-row">
-                    ${room.image && sameImageRooms.length > 1 ? buildNearbyRoomsSection(room) : ''}
                     ${buildFullInfoSection(room)}
+                    ${room.image && sameImageRooms.length > 1 ? buildNearbyRoomsSection(room) : ''}
                 </div>
                 <section id="search_section" class="inline-search-section" aria-labelledby="search-heading">
                     <h2 id="search-heading" class="sr-only">Search Rooms</h2>
-                    <form class="inline-search">
-                        <input type="text" placeholder="Search for room..." aria-label="Search for room">
-                        <button type="submit">Go</button>
-                    </form>
+                    ${buildInlineSearchForms()}
                 </section>
                 <footer id="updated_at" role="contentinfo">
                     <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
@@ -206,7 +208,7 @@ function buildMapSection(room) {
         <section id="map-section" role="img" aria-labelledby="map-description">
             <div id="image_wrapper">
                 <div id="highlight_box" class="highlight_box"></div>
-                <img id="mapimage" src="app/static/maps/${room.image}" alt="Map of ${escapeHtml(mapAlt)} showing room ${escapeHtml(room.title[0])}. Click on rooms to navigate or use the nearby rooms list below for accessible navigation." role="img" tabindex="0">
+                <img id="mapimage" src="static/maps/${room.image}" alt="Map of ${escapeHtml(mapAlt)} showing room ${escapeHtml(room.title[0])}. Click on rooms to navigate or use the nearby rooms list below for accessible navigation." role="img" tabindex="0">
                 <div id="map-description" class="sr-only">
                     Interactive map showing ${escapeHtml(room.title[0])} and connected rooms. Use tab to navigate to room connections below or use the text-based navigation.
                 </div>
@@ -222,9 +224,10 @@ function buildRoomInfoSection(room) {
     let exitsHTML = '';
     if (room.wayto) {
         for (const [exitRoomId, exitCommand] of Object.entries(room.wayto)) {
+            const displayCommand = exitCommand.startsWith(';e') ? 'StringProc' : exitCommand;
             exitsHTML += `
-                <a href="#/room/${exitRoomId}" class="exit-item">
-                    <span class="exit-command">go ${escapeHtml(exitCommand)}</span>
+                <a href="#/room/${exitRoomId}" class="exit-item exit-item-compact">
+                    <span class="exit-command">${escapeHtml(displayCommand)}</span>
                     <span class="exit-arrow">&rarr;</span>
                     <span class="exit-id">${exitRoomId}</span>
                 </a>
@@ -257,6 +260,36 @@ function buildRoomInfoSection(room) {
     `;
 }
 
+function buildInlineSearchForms() {
+    return `
+        <div class="inline-search-container">
+            <form id="inlineBasicSearchForm" class="inline-search" role="search" aria-label="Basic room search">
+                <input type="text" id="inlineSearch" placeholder="Room ID, UID, tag, or text..." aria-label="Search for room">
+                <button type="submit">Search</button>
+            </form>
+            
+            <div class="inline-search-divider">or search by tag:</div>
+            
+            <form id="inlineTagSearchForm" class="inline-tag-search" role="search" aria-label="Tag and map search">
+                <div class="inline-tag-row">
+                    <div class="inline-tag-input-wrapper">
+                        <input type="text" id="inlineTagInput" placeholder="Start typing a tag..." autocomplete="off"
+                               aria-expanded="false" aria-autocomplete="both" role="combobox" aria-controls="inlineTagSuggestions">
+                        <ul id="inlineTagSuggestions" tabindex="0" role="listbox" aria-label="Tag suggestions"></ul>
+                    </div>
+                    <select id="inlineImageSelect" disabled aria-label="Select a map">
+                        <option value="">Select map...</option>
+                    </select>
+                    <select id="inlineLocationSelect" disabled aria-label="Select a location">
+                        <option value="">Location (optional)...</option>
+                    </select>
+                    <button type="submit" id="inlineTagSearchButton" disabled>Go</button>
+                </div>
+            </form>
+        </div>
+    `;
+}
+
 function buildFullInfoSection(room) {
     const jsonPretty = JSON.stringify(room, null, 2);
     return `
@@ -278,7 +311,7 @@ function buildNearbyRoomsSection(room) {
     let roomsHTML = '';
     for (const nearbyRoom of sameImageRooms) {
         if (nearbyRoom.id !== room.id) {
-            const locationInfo = nearbyRoom.location ? ` - Location: ${escapeHtml(nearbyRoom.location)}` : '';
+            const locationInfo = nearbyRoom.location ? `<span class="nearby-location"> - Location: ${escapeHtml(nearbyRoom.location)}</span>` : '';
             roomsHTML += `
                 <li>
                     <a href="#/room/${nearbyRoom.id}" aria-label="Navigate to ${escapeHtml(nearbyRoom.title[0])}, room ID ${nearbyRoom.id}">
@@ -296,9 +329,8 @@ function buildNearbyRoomsSection(room) {
             <div id="nearby_rooms_div">
                 <details id="nearby_rooms_details">
                     <summary>Nearby Rooms on This Map</summary>
-                    <article id="nearby_rooms_article">
-                        <p>The following rooms are also shown on this map and can be clicked or navigated to:</p>
-                        <ul role="list" aria-label="List of nearby rooms">
+                    <article id="nearby_rooms_article" class="nearby-rooms-content">
+                        <ul role="list" aria-label="List of nearby rooms" class="nearby-rooms-list">
                             ${roomsHTML}
                         </ul>
                     </article>
@@ -376,6 +408,11 @@ function initRoomInteractions(room, queryParams) {
         opacityCheckbox.addEventListener('change', toggleOpacity);
     }
     
+    const fullInfoCode = document.getElementById('full_info_code');
+    if (fullInfoCode && typeof Prism !== 'undefined') {
+        Prism.highlightElement(fullInfoCode);
+    }
+    
     const mapDropdown = document.getElementById('map_dropdown');
     if (mapDropdown) {
         mapDropdown.addEventListener('change', navigateToMap);
@@ -397,15 +434,20 @@ function initRoomInteractions(room, queryParams) {
     if (queryParams.highlight_location && locationDropdown) {
         locationDropdown.value = queryParams.highlight_location;
     }
-    if (queryParams.highlight_tag || queryParams.highlight_location) {
-        highlightRooms();
-    }
     
     const mapImage = document.getElementById('mapimage');
+    const hasHighlightParams = queryParams.highlight_tag || queryParams.highlight_location;
+    
     if (mapImage) {
-        mapImage.addEventListener('load', () => fixHighlightBox(room));
+        mapImage.addEventListener('load', () => {
+            fixHighlightBox(room);
+            if (hasHighlightParams) highlightRooms();
+        });
         mapImage.addEventListener('click', handleMapClick);
-        if (mapImage.complete) fixHighlightBox(room);
+        if (mapImage.complete) {
+            fixHighlightBox(room);
+            if (hasHighlightParams) highlightRooms();
+        }
     }
     
     const helpIcon = document.getElementById('help_icon');
@@ -424,15 +466,24 @@ function initRoomInteractions(room, queryParams) {
         });
     }
 
-    const inlineSearchForm = document.querySelector('.inline-search');
-    if (inlineSearchForm) {
-        inlineSearchForm.addEventListener('submit', (e) => {
+    initInlineSearch();
+    
+    const searchLink = document.getElementById('search_link');
+    if (searchLink) {
+        searchLink.addEventListener('click', (e) => {
             e.preventDefault();
-            const input = inlineSearchForm.querySelector('input');
-            if (input.value.trim()) {
-                navigate(`/search?q=${encodeURIComponent(input.value.trim())}`);
+            const searchSection = document.getElementById('search_section');
+            if (searchSection) {
+                searchSection.scrollIntoView({ behavior: 'smooth' });
+                const searchInput = searchSection.querySelector('input');
+                if (searchInput) searchInput.focus();
             }
         });
+    }
+    
+    const copyLinkBtn = document.getElementById('copy_link_btn');
+    if (copyLinkBtn) {
+        copyLinkBtn.addEventListener('click', () => copyRoomLink(room));
     }
     
     document.addEventListener('click', handleDocumentClick);
@@ -467,6 +518,28 @@ function navigateToAdjacentMap() {
         announceToScreenReader(`Navigating to adjacent map: ${selectedText}`);
         navigate(`/room/${selectedRoomId}`);
     }
+}
+
+function copyRoomLink(room) {
+    const currentTag = document.getElementById('tag_dropdown')?.value || '';
+    const currentLocation = document.getElementById('location_dropdown')?.value || '';
+    
+    let url = `${window.location.origin}${window.location.pathname}#/room/${room.id}`;
+    const params = new URLSearchParams();
+    if (currentTag) params.append('highlight_tag', currentTag);
+    if (currentLocation) params.append('highlight_location', currentLocation);
+    if (params.toString()) url += '?' + params.toString();
+    
+    navigator.clipboard.writeText(url).then(() => {
+        const popup = document.getElementById('copy_link_popup');
+        popup.classList.add('visible');
+        announceToScreenReader('Link copied to clipboard');
+        setTimeout(() => {
+            popup.classList.remove('visible');
+        }, 2000);
+    }).catch(() => {
+        announceToScreenReader('Failed to copy link');
+    });
 }
 
 function showHelpPopup() {
@@ -736,4 +809,274 @@ function navigateToRoom(roomId) {
     if (params.toString()) path += '?' + params.toString();
     
     navigate(path);
+}
+
+let inlineTagsCache = [];
+
+function initInlineSearch() {
+    const basicForm = document.getElementById('inlineBasicSearchForm');
+    if (basicForm) {
+        basicForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('inlineSearch');
+            if (input.value.trim()) {
+                navigate(`/search?q=${encodeURIComponent(input.value.trim())}`);
+            }
+        });
+    }
+    
+    inlineTagsCache = getAllTags();
+    initInlineTagAutocomplete();
+    initInlineCascadingDropdowns();
+}
+
+function initInlineTagAutocomplete() {
+    const tagInput = document.getElementById('inlineTagInput');
+    const tagSuggestions = document.getElementById('inlineTagSuggestions');
+    let selectedIndex = -1;
+    
+    if (!tagInput || !tagSuggestions) return;
+    
+    tagInput.addEventListener('input', function() {
+        const inputValue = this.value.toLowerCase();
+        resetInlineDropdowns();
+        
+        if (inputValue.length > 0) {
+            const filteredTags = inlineTagsCache.filter(tag =>
+                tag.toLowerCase().includes(inputValue)
+            );
+            
+            if (filteredTags.length > 0) {
+                showInlineSuggestions(filteredTags, tagSuggestions, tagInput);
+                selectedIndex = -1;
+            } else {
+                hideInlineSuggestions(tagSuggestions, tagInput);
+            }
+        } else {
+            hideInlineSuggestions(tagSuggestions, tagInput);
+        }
+    });
+    
+    tagInput.addEventListener('keydown', function(e) {
+        const isVisible = tagSuggestions.style.display === 'block';
+        if (!isVisible) return;
+        
+        const items = tagSuggestions.querySelectorAll('.inline-suggestion-item');
+        
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateInlineHighlight(items, selectedIndex);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateInlineHighlight(items, selectedIndex);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (selectedIndex >= 0 && selectedIndex < items.length) {
+                    selectInlineTag(items[selectedIndex].textContent);
+                }
+                break;
+            case 'Escape':
+                e.preventDefault();
+                hideInlineSuggestions(tagSuggestions, tagInput);
+                break;
+        }
+    });
+    
+    tagInput.addEventListener('blur', function() {
+        setTimeout(() => {
+            if (document.activeElement !== tagInput && document.activeElement !== tagSuggestions) {
+                hideInlineSuggestions(tagSuggestions, tagInput);
+            }
+        }, 150);
+    });
+}
+
+function showInlineSuggestions(tags, container, input) {
+    container.innerHTML = '';
+    
+    tags.slice(0, 30).forEach((tag, index) => {
+        const li = document.createElement('li');
+        li.textContent = tag;
+        li.className = 'inline-suggestion-item';
+        li.setAttribute('role', 'option');
+        li.setAttribute('id', `inline-tag-option-${index}`);
+        li.setAttribute('aria-selected', 'false');
+        
+        li.addEventListener('click', (e) => {
+            e.preventDefault();
+            selectInlineTag(tag);
+        });
+        
+        container.appendChild(li);
+    });
+    
+    container.style.display = 'block';
+    input.setAttribute('aria-expanded', 'true');
+}
+
+function hideInlineSuggestions(container, input) {
+    container.style.display = 'none';
+    input.setAttribute('aria-expanded', 'false');
+}
+
+function updateInlineHighlight(items, selectedIndex) {
+    items.forEach((item, index) => {
+        if (index === selectedIndex) {
+            item.classList.add('selected');
+            item.setAttribute('aria-selected', 'true');
+        } else {
+            item.classList.remove('selected');
+            item.setAttribute('aria-selected', 'false');
+        }
+    });
+}
+
+function selectInlineTag(tag) {
+    const tagInput = document.getElementById('inlineTagInput');
+    const tagSuggestions = document.getElementById('inlineTagSuggestions');
+    
+    tagInput.value = tag;
+    hideInlineSuggestions(tagSuggestions, tagInput);
+    loadInlineImagesForTag(tag);
+}
+
+function resetInlineDropdowns() {
+    const imageSelect = document.getElementById('inlineImageSelect');
+    const locationSelect = document.getElementById('inlineLocationSelect');
+    const tagSearchButton = document.getElementById('inlineTagSearchButton');
+    
+    imageSelect.innerHTML = '<option value="">Select map...</option>';
+    imageSelect.disabled = true;
+    locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
+    locationSelect.disabled = true;
+    tagSearchButton.disabled = true;
+}
+
+function initInlineCascadingDropdowns() {
+    const imageSelect = document.getElementById('inlineImageSelect');
+    const locationSelect = document.getElementById('inlineLocationSelect');
+    const tagSearchButton = document.getElementById('inlineTagSearchButton');
+    const tagSearchForm = document.getElementById('inlineTagSearchForm');
+    
+    if (!imageSelect) return;
+    
+    imageSelect.addEventListener('change', function() {
+        const selectedImage = this.value;
+        const tagInput = document.getElementById('inlineTagInput');
+        
+        locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
+        locationSelect.disabled = true;
+        
+        if (selectedImage) {
+            loadInlineLocationsForTagAndImage(tagInput.value, selectedImage);
+            tagSearchButton.disabled = false;
+        } else {
+            tagSearchButton.disabled = true;
+        }
+    });
+    
+    if (tagSearchForm) {
+        tagSearchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const tagInput = document.getElementById('inlineTagInput');
+            const tag = tagInput.value;
+            const image = imageSelect.value;
+            const location = locationSelect.value;
+            
+            if (tag && image) {
+                navigateToInlineTaggedRoom(tag, image, location);
+            }
+        });
+    }
+}
+
+function loadInlineImagesForTag(tag) {
+    const imageSelect = document.getElementById('inlineImageSelect');
+    const allRooms = getAllRooms();
+    
+    const imagesWithTag = {};
+    
+    for (const room of allRooms) {
+        if (room.tags?.includes(tag) && room.image) {
+            if (!imagesWithTag[room.image]) {
+                let displayName = room.image;
+                if (room.tags) {
+                    for (const t of room.tags) {
+                        if (t.startsWith('meta:mapname:')) {
+                            displayName = t.replace('meta:mapname:', '');
+                            break;
+                        }
+                    }
+                }
+                imagesWithTag[room.image] = { filename: room.image, display_name: displayName };
+            }
+        }
+    }
+    
+    const images = Object.values(imagesWithTag).sort((a, b) => 
+        a.display_name.localeCompare(b.display_name)
+    );
+    
+    imageSelect.innerHTML = '<option value="">Select map...</option>';
+    images.forEach(imageData => {
+        const option = document.createElement('option');
+        option.value = imageData.filename;
+        option.textContent = imageData.display_name;
+        imageSelect.appendChild(option);
+    });
+    imageSelect.disabled = false;
+}
+
+function loadInlineLocationsForTagAndImage(tag, image) {
+    const locationSelect = document.getElementById('inlineLocationSelect');
+    const allRooms = getAllRooms();
+    
+    const locations = new Set();
+    
+    for (const room of allRooms) {
+        const imageMatch = room.image === image;
+        const tagMatch = !tag || room.tags?.includes(tag);
+        
+        if (imageMatch && tagMatch && room.location) {
+            locations.add(room.location);
+        }
+    }
+    
+    const sortedLocations = Array.from(locations).sort();
+    
+    locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
+    sortedLocations.forEach(location => {
+        const option = document.createElement('option');
+        option.value = location;
+        option.textContent = location;
+        locationSelect.appendChild(option);
+    });
+    locationSelect.disabled = false;
+}
+
+function navigateToInlineTaggedRoom(tag, image, location) {
+    const allRooms = getAllRooms();
+    
+    for (const room of allRooms) {
+        const tagMatch = room.tags?.includes(tag);
+        const imageMatch = room.image === image;
+        const locationMatch = !location || room.location === location;
+        
+        if (tagMatch && imageMatch && locationMatch) {
+            let path = `/room/${room.id}?highlight_tag=${encodeURIComponent(tag)}`;
+            if (location) {
+                path += `&highlight_location=${encodeURIComponent(location)}`;
+            }
+            navigate(path);
+            return;
+        }
+    }
+    
+    announceToScreenReader('No matching room found');
 }

@@ -219,3 +219,14 @@ build-iPhoneSimulator/
 
 # Bead artifacts (local-only)
 .beads/artifacts/
+
+# Local testing environments
+testing_env/
+testing_roomdb_venv/
+
+# Windows
+Thumbs.db
+
+# Claude/AI tools
+.claude/
+.beads/
