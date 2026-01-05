@@ -1005,6 +1005,18 @@ table tr td {
     border: 1px solid #f1f5f9;
 }
 
+.path-link {
+    color: #0066cc;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.path-link:hover {
+    color: #0055aa;
+    text-decoration: underline;
+}
+
 .room-tags-list {
     display: flex;
     flex-wrap: wrap;
@@ -1245,6 +1257,14 @@ details summary:hover::before {
         color: #94a3b8;
         background-color: #0f172a;
         border-color: #1e293b;
+    }
+    
+    .path-link {
+        color: #66b3ff;
+    }
+    
+    .path-link:hover {
+        color: #99ccff;
     }
     
     .tag-badge {

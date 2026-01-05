@@ -115,10 +115,8 @@ function buildRoomHTML(room, queryParams) {
         <main id="main-content" role="main">
             <div id="after_image">
                 ${buildRoomInfoSection(room)}
-                <div class="collapsibles-row">
-                    ${buildFullInfoSection(room)}
-                    ${room.image && sameImageRooms.length > 1 ? buildNearbyRoomsSection(room) : ''}
-                </div>
+                ${buildFullInfoSection(room)}
+                ${room.image && sameImageRooms.length > 1 ? buildNearbyRoomsSection(room) : ''}
                 <section id="search_section" class="inline-search-section" aria-labelledby="search-heading">
                     <h2 id="search-heading" class="sr-only">Search Rooms</h2>
                     ${buildInlineSearchForms()}
@@ -220,6 +218,7 @@ function buildMapSection(room) {
 function buildRoomInfoSection(room) {
     const description = room.description?.[0] || 'None';
     const paths = room.paths?.[0] || 'Obvious paths: none';
+    const pathsWithLinks = buildPathsWithLinks(paths, room.wayto);
     
     let exitsHTML = '';
     if (room.wayto) {
@@ -241,7 +240,7 @@ function buildRoomInfoSection(room) {
             <div class="room-card">
                 <p class="room-description">${escapeHtml(description)}</p>
                 <div class="room-paths">
-                    <strong>Obvious paths:</strong> ${escapeHtml(paths)}
+                    ${pathsWithLinks}
                 </div>
                 ${room.tags ? `
                 <div class="room-tags-list" aria-label="Room tags">
@@ -258,6 +257,46 @@ function buildRoomInfoSection(room) {
             </div>
         </section>
     `;
+}
+
+function buildPathsWithLinks(paths, wayto) {
+    if (!wayto) return escapeHtml(paths);
+    
+    const cardinalMap = {
+        'northeast': ['northeast', 'ne'],
+        'northwest': ['northwest', 'nw'],
+        'southeast': ['southeast', 'se'],
+        'southwest': ['southwest', 'sw'],
+        'north': ['north', 'n'],
+        'south': ['south', 's'],
+        'east': ['east', 'e'],
+        'west': ['west', 'w'],
+        'out': ['out']
+    };
+    
+    const exitToRoom = {};
+    for (const [roomId, exitCmd] of Object.entries(wayto)) {
+        const cmd = exitCmd.toLowerCase();
+        for (const [cardinal, variants] of Object.entries(cardinalMap)) {
+            if (variants.includes(cmd)) {
+                exitToRoom[cardinal] = roomId;
+                break;
+            }
+        }
+    }
+    
+    let result = escapeHtml(paths);
+    
+    const cardinalsLongFirst = ['northeast', 'northwest', 'southeast', 'southwest', 'north', 'south', 'east', 'west', 'out'];
+    
+    for (const cardinal of cardinalsLongFirst) {
+        if (exitToRoom[cardinal]) {
+            const regex = new RegExp(`\\b(${cardinal})\\b`, 'gi');
+            result = result.replace(regex, `<a href="#/room/${exitToRoom[cardinal]}" class="path-link">$1</a>`);
+        }
+    }
+    
+    return result;
 }
 
 function buildInlineSearchForms() {

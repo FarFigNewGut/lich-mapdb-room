@@ -66,7 +66,7 @@ function openDatabase() {
 
 async function fetchUpdatedAt() {
     try {
-        const response = await fetch('data/updated_at');
+        const response = await fetch('data/updated_at', { cache: 'no-store' });
         return (await response.text()).trim();
     } catch {
         return null;
