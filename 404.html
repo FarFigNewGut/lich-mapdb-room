@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found - Lich Map Room Database</title>
+    
+    <!-- Favicons -->
+    <link rel="manifest" href="/static/icons/site.webmanifest">
+    <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#11191f">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/css/pico.min.css">
+    <link rel="stylesheet" href="/static/css/room.css">
+    
+    <style>
+        .error-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .error-code {
+            font-size: 120px;
+            font-weight: bold;
+            color: #0066cc;
+            margin: 0;
+            line-height: 1;
+            text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
+        }
+        
+        .error-title {
+            font-size: 28px;
+            margin: 20px 0 10px 0;
+            color: #334155;
+        }
+        
+        .error-message {
+            font-size: 16px;
+            color: #64748b;
+            max-width: 500px;
+            margin: 0 auto 30px auto;
+            line-height: 1.6;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .error-link {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #0066cc;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        
+        .error-link:hover {
+            background-color: #0055aa;
+            transform: translateY(-1px);
+            text-decoration: none;
+        }
+        
+        .error-link-secondary {
+            background-color: #f1f5f9;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .error-link-secondary:hover {
+            background-color: #e2e8f0;
+        }
+        
+        .error-path {
+            margin-top: 40px;
+            padding: 15px 20px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #64748b;
+        }
+        
+        .error-path code {
+            color: #dc2626;
+            font-weight: 600;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            .error-code {
+                color: #66b3ff;
+            }
+            
+            .error-title {
+                color: #e2e8f0;
+            }
+            
+            .error-message {
+                color: #94a3b8;
+            }
+            
+            .error-link-secondary {
+                background-color: #1e293b;
+                color: #e2e8f0;
+                border-color: #334155;
+            }
+            
+            .error-link-secondary:hover {
+                background-color: #334155;
+            }
+            
+            .error-path {
+                background-color: #1e293b;
+                border-color: #334155;
+                color: #94a3b8;
+            }
+            
+            .error-path code {
+                color: #f87171;
+            }
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            .error-link {
+                transition: none;
+            }
+            
+            .error-link:hover {
+                transform: none;
+            }
+        }
+    </style>
+    
+    <script>
+        (function() {
+            // Get the path from the URL (e.g., "/228" or "/u7108")
+            var path = window.location.pathname;
+            
+            // Remove leading slash and any trailing slashes
+            var cleanPath = path.replace(/^\/+|\/+$/g, '');
+            
+            // Check if it matches our room pattern:
+            // - Pure numbers: 228, 1234, etc.
+            // - u followed by numbers: u7108, u123, etc.
+            var roomPattern = /^(\d+|u\d+)$/i;
+            
+            if (roomPattern.test(cleanPath)) {
+                // Redirect to the hash route for the room
+                window.location.replace('/#/room/' + cleanPath.toLowerCase());
+            }
+            // Otherwise, let the 404 page render
+        })();
+    </script>
+</head>
+<body>
+    <main class="error-container" role="main">
+        <p class="error-code" aria-hidden="true">404</p>
+        <h1 class="error-title">Page Not Found</h1>
+        <p class="error-message">
+            The page you're looking for doesn't exist or may have been moved.
+            Try searching for a room or navigate back to the home page.
+        </p>
+        
+        <div class="error-actions">
+            <a href="/" class="error-link">Go to Home</a>
+            <a href="/#/search" class="error-link error-link-secondary">Search Rooms</a>
+        </div>
+        
+        <div class="error-path" aria-label="Requested path">
+            Requested: <code id="requested-path"></code>
+        </div>
+    </main>
+    
+    <script>
+        // Display the requested path
+        document.getElementById('requested-path').textContent = window.location.pathname;
+    </script>
+</body>
+</html>
