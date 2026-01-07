@@ -25,6 +25,7 @@ This tool helps Gemstone IV players:
 - **Room Pages**: See everything about a room - exits, descriptions, coordinates, the works
 - **Clickable rooms**: Any room on the map, clickable or not, can be clicked to navigate to that room specifically
 - **Map Highlighting**: Click to highlight rooms by tags or locations on the map
+- **View Complex Movements**: Complex (StringProc) wayto (movements) and timeto (weight values) called out when applicable
 - **Connected Maps**: Quick links to maps that connect to where you are
 
 ## How to Use It
