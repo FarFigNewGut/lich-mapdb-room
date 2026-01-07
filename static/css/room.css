@@ -99,7 +99,7 @@ h3 {
 
 ul[role="list"] {
     list-style-type: disc;
-    margin-left: 45px;
+    margin-left: 15px;
 }
 
 ul[role="list"] li {
@@ -338,6 +338,10 @@ table tr td {
     border: 1px solid;
 }
 
+article#full_info_article {
+    padding: 5px;
+}
+
 #full_info_div,
 #nearby_rooms_div {
     padding-left: 25px;
@@ -346,7 +350,6 @@ table tr td {
 
 #full_info_details,
 #nearby_rooms_details {
-    width: 50%;
 }
 
 #full_info_code {
@@ -1241,7 +1244,6 @@ table tr td {
 }
 
 .stringproc-code-container {
-    max-height: 200px;
     overflow-y: auto;
     border-radius: 3px;
     background: #1e1e1e;
@@ -1548,6 +1550,7 @@ details summary:hover::before {
 
 .nearby-rooms-content {
     font-size: 10px;
+    padding: 5px;
 }
 
 .nearby-rooms-list {
