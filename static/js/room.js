@@ -5,6 +5,19 @@ import { announceToScreenReader, escapeHtml, getUpdatedAt } from './utils.js';
 let currentRoom = null;
 let sameImageRooms = [];
 
+function getStringProcs(obj) {
+    if (!obj) return [];
+    return Object.entries(obj)
+        .filter(([_, val]) => typeof val === 'string' && val.startsWith(';e'))
+        .map(([roomId, code]) => ({ roomId, code }));
+}
+
+function formatStringProc(code) {
+    return code
+        .replace(/^;e\s*/, '')  // Strip prefix
+        .replace(/;/g, '\n');   // Semicolons to newlines
+}
+
 export function renderRoom(roomIdOrUid, queryParams = {}) {
     const room = getRoomById(roomIdOrUid);
     if (!room) {
@@ -220,6 +233,13 @@ function buildRoomInfoSection(room) {
     const paths = room.paths?.[0] || 'Obvious paths: none';
     const pathsWithLinks = buildPathsWithLinks(paths, room.wayto);
     
+    const waytoProcs = getStringProcs(room.wayto);
+    const timetoProcs = getStringProcs(room.timeto);
+    const hasStringProcs = waytoProcs.length > 0 || timetoProcs.length > 0;
+    
+    window._currentRoomWaytoProcs = waytoProcs;
+    window._currentRoomTimetoProcs = timetoProcs;
+    
     let exitsHTML = '';
     if (room.wayto) {
         for (const [exitRoomId, exitCommand] of Object.entries(room.wayto)) {
@@ -250,12 +270,33 @@ function buildRoomInfoSection(room) {
             </div>
             
             <div class="exits-section">
-                <h3 class="exits-heading">EXITS</h3>
+                ${hasStringProcs ? `
+                    <div class="exits-tabs" role="tablist" aria-label="Exits and StringProc viewers">
+                        <span role="tab" class="exits-tab" data-type="exits" aria-selected="true" tabindex="0">EXITS</span>
+                        ${waytoProcs.length ? `<span role="tab" class="exits-tab" data-type="wayto" aria-selected="false" tabindex="-1">WayTo</span>` : ''}
+                        ${timetoProcs.length ? `<span role="tab" class="exits-tab" data-type="timeto" aria-selected="false" tabindex="-1">TimeTo</span>` : ''}
+                    </div>
+                ` : `
+                    <h3 class="exits-heading">EXITS</h3>
+                `}
                 <div class="exits-grid">
                     ${exitsHTML}
                 </div>
+                ${hasStringProcs ? buildStringProcPanel() : ''}
             </div>
         </section>
+    `;
+}
+
+function buildStringProcPanel() {
+    return `
+        <div class="stringproc-panel" role="region" aria-label="StringProc code viewer" hidden>
+            <div class="stringproc-subtabs" role="tablist" aria-label="Destination rooms">
+            </div>
+            <div class="stringproc-code-container">
+                <pre><code class="language-ruby" id="stringproc-code"></code></pre>
+            </div>
+        </div>
     `;
 }
 
@@ -506,6 +547,7 @@ function initRoomInteractions(room, queryParams) {
     }
 
     initInlineSearch();
+    initStringProcTabs();
     
     const searchLink = document.getElementById('search_link');
     if (searchLink) {
@@ -527,6 +569,122 @@ function initRoomInteractions(room, queryParams) {
     
     document.addEventListener('click', handleDocumentClick);
     document.addEventListener('keydown', handleKeydown);
+}
+
+function initStringProcTabs() {
+    const tablist = document.querySelector('.exits-tabs');
+    if (!tablist) return;
+    
+    const tabs = tablist.querySelectorAll('.exits-tab');
+    const panel = document.querySelector('.stringproc-panel');
+    const exitsGrid = document.querySelector('.exits-grid');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => selectMainTab(tab, tabs, panel, exitsGrid));
+    });
+    
+    tablist.addEventListener('keydown', (e) => handleTabKeydown(e, tabs));
+}
+
+function selectMainTab(selectedTab, allTabs, panel, exitsGrid) {
+    const type = selectedTab.dataset.type;
+    
+    allTabs.forEach(tab => {
+        const isSelected = tab === selectedTab;
+        tab.setAttribute('aria-selected', isSelected);
+        tab.setAttribute('tabindex', isSelected ? '0' : '-1');
+        tab.classList.toggle('selected', isSelected);
+    });
+    
+    if (type === 'exits') {
+        exitsGrid.hidden = false;
+        panel.hidden = true;
+        announceToScreenReader('Showing exits');
+    } else {
+        exitsGrid.hidden = true;
+        panel.hidden = false;
+        populateSubtabs(type);
+        announceToScreenReader(`Showing ${type === 'wayto' ? 'WayTo' : 'TimeTo'} StringProcs`);
+    }
+}
+
+function populateSubtabs(type) {
+    const container = document.querySelector('.stringproc-subtabs');
+    const procs = type === 'wayto' 
+        ? window._currentRoomWaytoProcs 
+        : window._currentRoomTimetoProcs;
+    
+    container.innerHTML = procs.map((proc, index) => `
+        <span role="tab" 
+              class="stringproc-subtab" 
+              data-index="${index}"
+              data-type="${type}"
+              aria-selected="false"
+              tabindex="-1">${proc.roomId}</span>
+    `).join('');
+    
+    container.querySelectorAll('.stringproc-subtab').forEach(subtab => {
+        subtab.addEventListener('click', () => selectSubtab(subtab, procs));
+    });
+    
+    container.addEventListener('keydown', (e) => {
+        handleTabKeydown(e, container.querySelectorAll('.stringproc-subtab'));
+    });
+    
+    // Clear code display when switching main tabs
+    document.getElementById('stringproc-code').textContent = '';
+}
+
+function selectSubtab(selectedSubtab, procs) {
+    const allSubtabs = document.querySelectorAll('.stringproc-subtab');
+    const index = parseInt(selectedSubtab.dataset.index);
+    const proc = procs[index];
+    
+    allSubtabs.forEach(tab => {
+        const isSelected = tab === selectedSubtab;
+        tab.setAttribute('aria-selected', isSelected);
+        tab.setAttribute('tabindex', isSelected ? '0' : '-1');
+        tab.classList.toggle('selected', isSelected);
+    });
+    
+    const codeEl = document.getElementById('stringproc-code');
+    codeEl.textContent = formatStringProc(proc.code);
+    Prism.highlightElement(codeEl);
+    
+    announceToScreenReader(`Showing code for room ${proc.roomId}`);
+}
+
+function handleTabKeydown(e, tabs) {
+    const tabArray = Array.from(tabs);
+    const currentIndex = tabArray.findIndex(t => t.getAttribute('aria-selected') === 'true');
+    
+    let newIndex = currentIndex;
+    
+    switch (e.key) {
+        case 'ArrowLeft':
+        case 'ArrowUp':
+            e.preventDefault();
+            newIndex = currentIndex <= 0 ? tabArray.length - 1 : currentIndex - 1;
+            break;
+        case 'ArrowRight':
+        case 'ArrowDown':
+            e.preventDefault();
+            newIndex = currentIndex >= tabArray.length - 1 ? 0 : currentIndex + 1;
+            break;
+        case 'Home':
+            e.preventDefault();
+            newIndex = 0;
+            break;
+        case 'End':
+            e.preventDefault();
+            newIndex = tabArray.length - 1;
+            break;
+        default:
+            return;
+    }
+    
+    tabArray[newIndex].focus();
+    tabArray[newIndex].click();
 }
 
 function toggleOpacity() {
