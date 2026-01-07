@@ -98,6 +98,7 @@ function buildRoomHTML(room, queryParams) {
                         ${buildMapDropdown(mapCategories)}
                         ${adjacentMaps.length ? buildAdjacentMapDropdown(adjacentMaps) : ''}
                     <span id="search_link" title="Search for another room" role="button" tabindex="0">&#128269;</span>
+                    <span id="scroll_top_btn" title="Scroll to top" role="button" tabindex="0" aria-label="Scroll to top of page">&#128285;</span>
                     <span id="copy_link_btn" title="Copy link for this room" role="button" tabindex="0" aria-label="Copy link for this room">&#128279;</span>
                     </div>
                 </div>
@@ -559,6 +560,13 @@ function initRoomInteractions(room, queryParams) {
                 const searchInput = searchSection.querySelector('input');
                 if (searchInput) searchInput.focus();
             }
+        });
+    }
+
+    const scrollTopBtn = document.getElementById('scroll_top_btn');
+    if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
     
