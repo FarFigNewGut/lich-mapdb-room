@@ -36,7 +36,8 @@
 .room-info {
     font-size: 18px;
     color: inherit;
-    margin: 5px 0 0 0;
+    margin: 0 2px 0 0;
+    padding-bottom: 3px;
     font-weight: bold;
     text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
 }
@@ -139,8 +140,8 @@ article {
 }
 
 header {
-    margin-top: 5px;
-    margin-bottom: 5px;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 footer {
@@ -371,20 +372,20 @@ article#full_info_article {
 
 /* Fix navigation header padding */
 #navigation_header {
-    padding: 8px 25px 8px 25px;
+    padding: 2px 25px;
     background-color: rgba(0, 0, 0, 0.02);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 #header {
-	padding: 2px 25px 1px 25px;
+	padding: 0 25px 0 25px;
 }
 
 #title_row {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
-    margin-bottom: 5px;
+    margin-bottom: 0;
     gap: 15px;
 }
 
@@ -395,8 +396,8 @@ article#full_info_article {
 }
 
 #tag_selector {
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 0;
+    padding-bottom: 2px;
     display: flex;
     align-items: baseline;
     gap: 8px;
@@ -411,7 +412,8 @@ article#full_info_article {
 
 #tag_dropdown,
 #location_dropdown {
-    padding: 3px 5px;
+    padding: 3px;
+    margin-bottom: 0px;
     font-size: 12px;
     border: 1px solid #ccc;
     border-radius: 3px;
@@ -446,7 +448,8 @@ article#full_info_article {
     align-items: center;
     justify-content: flex-start;
     gap: 8px;
-    padding: 3px 0;
+    padding-top: 5px;
+    padding-bottom: 0px;
     flex-wrap: nowrap;
 }
 
@@ -463,6 +466,7 @@ article#full_info_article {
 }
 
 #search_link,
+#scroll_top_btn,
 #copy_link_btn {
     font-size: 14px;
     color: inherit;
@@ -476,6 +480,7 @@ article#full_info_article {
 }
 
 #search_link:hover,
+#scroll_top_btn:hover,
 #copy_link_btn:hover {
     opacity: 0.7;
     background: transparent;
@@ -604,6 +609,7 @@ article#full_info_article {
     font-weight: bold;
     cursor: pointer;
     margin-left: 5px;
+    margin-bottom: 0px;
     user-select: none;
     padding: 0;
     min-width: 16px;
@@ -1334,6 +1340,7 @@ details summary:hover::before {
     display: flex;
     max-width: 600px;
     gap: 12px;
+    margin-bottom: 5px;
 }
 
 .inline-search input {
@@ -1598,9 +1605,10 @@ details summary:hover::before {
 }
 
 .inline-search-divider {
-    margin: 12px 0;
+    margin: 5px 0;
     font-size: 13px;
     color: #64748b;
+    font-weight: bold;
 }
 
 .inline-tag-search {
