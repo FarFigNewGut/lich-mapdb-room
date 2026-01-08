@@ -313,7 +313,9 @@ function buildPathsWithLinks(paths, wayto) {
         'south': ['south', 's'],
         'east': ['east', 'e'],
         'west': ['west', 'w'],
-        'out': ['out']
+        'down': ['down'],
+        'out': ['out'],
+        'up': ['up']
     };
     
     const exitToRoom = {};
@@ -329,7 +331,7 @@ function buildPathsWithLinks(paths, wayto) {
     
     let result = escapeHtml(paths);
     
-    const cardinalsLongFirst = ['northeast', 'northwest', 'southeast', 'southwest', 'north', 'south', 'east', 'west', 'out'];
+    const cardinalsLongFirst = ['northeast', 'northwest', 'southeast', 'southwest', 'north', 'south', 'east', 'west', 'down', 'out', 'up'];
     
     for (const cardinal of cardinalsLongFirst) {
         if (exitToRoom[cardinal]) {
