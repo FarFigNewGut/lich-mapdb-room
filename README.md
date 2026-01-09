@@ -1,3 +1,5 @@
+[![pages-build-deployment](https://github.com/FarFigNewGut/lich-mapdb-room/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/FarFigNewGut/lich-mapdb-room/actions/workflows/pages/pages-build-deployment)
+
 # Lich Map Room Database
 
 A web app for exploring rooms from the Lich map database for Gemstone IV. Search for rooms, navigate maps, and get detailed room info.
