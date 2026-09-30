@@ -175,8 +175,10 @@ function buildTagSelector(imageTags, imageLocations) {
         <div id="tag_selector">
             <label for="tag_dropdown">Highlight tag:</label>
             <select id="tag_dropdown" aria-describedby="tag-dropdown-help">${tagOptions}</select>
-            <input type="checkbox" id="show_meta_tags_checkbox">
-            <label for="show_meta_tags_checkbox">Show meta tags</label>
+            <span id="meta_tags_toggle">
+                <input type="checkbox" id="show_meta_tags_checkbox">
+                <label for="show_meta_tags_checkbox">Show meta tags</label>
+            </span>
             <label for="location_dropdown">Highlight location:</label>
             <select id="location_dropdown" aria-describedby="location-dropdown-help">${locationOptions}</select>
             <button id="help_icon" type="button" aria-label="Show help for room highlighting" tabindex="0">?</button>
