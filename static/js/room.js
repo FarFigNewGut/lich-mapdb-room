@@ -164,10 +164,7 @@ function buildAdjacentMapDropdown(adjacentMaps) {
 }
 
 function buildTagSelector(imageTags, imageLocations) {
-    let tagOptions = '<option value="">Select a tag...</option>';
-    for (const tag of imageTags) {
-        tagOptions += `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`;
-    }
+    const tagOptions = buildTagOptions(imageTags, false);
     
     let locationOptions = '<option value="">Select a location...</option>';
     for (const location of imageLocations) {
@@ -178,6 +175,10 @@ function buildTagSelector(imageTags, imageLocations) {
         <div id="tag_selector">
             <label for="tag_dropdown">Highlight tag:</label>
             <select id="tag_dropdown" aria-describedby="tag-dropdown-help">${tagOptions}</select>
+            <span id="meta_tags_toggle">
+                <input type="checkbox" id="show_meta_tags_checkbox">
+                <label for="show_meta_tags_checkbox">Show meta tags</label>
+            </span>
             <label for="location_dropdown">Highlight location:</label>
             <select id="location_dropdown" aria-describedby="location-dropdown-help">${locationOptions}</select>
             <button id="help_icon" type="button" aria-label="Show help for room highlighting" tabindex="0">?</button>
@@ -185,6 +186,15 @@ function buildTagSelector(imageTags, imageLocations) {
             <div id="location-dropdown-help" class="sr-only">Select a location to highlight all rooms in that specific area of the map</div>
         </div>
     `;
+}
+
+function buildTagOptions(tags, showMeta) {
+    let options = '<option value="">Select a tag...</option>';
+    for (const tag of tags) {
+        if (!showMeta && tag.startsWith('meta:')) continue;
+        options += `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`;
+    }
+    return options;
 }
 
 function buildHelpPopup() {
@@ -466,9 +476,7 @@ function collectImageTags(rooms) {
     for (const room of rooms) {
         if (room.tags) {
             for (const tag of room.tags) {
-                if (!tag.startsWith('meta:')) {
-                    tags.add(tag);
-                }
+                tags.add(tag);
             }
         }
     }
@@ -509,6 +517,22 @@ function initRoomInteractions(room, queryParams) {
     const tagDropdown = document.getElementById('tag_dropdown');
     const locationDropdown = document.getElementById('location_dropdown');
     if (tagDropdown) tagDropdown.addEventListener('change', highlightRooms);
+    
+    const metaCheckbox = document.getElementById('show_meta_tags_checkbox');
+    const allTags = collectImageTags(sameImageRooms);
+    const refreshTagOptions = () => {
+        const selected = tagDropdown.value;
+        tagDropdown.innerHTML = buildTagOptions(allTags, metaCheckbox.checked);
+        tagDropdown.value = selected;
+        if (tagDropdown.value !== selected) highlightRooms();
+    };
+    if (metaCheckbox && tagDropdown) {
+        metaCheckbox.addEventListener('change', refreshTagOptions);
+        if (queryParams.highlight_tag?.startsWith('meta:')) {
+            metaCheckbox.checked = true;
+            tagDropdown.innerHTML = buildTagOptions(allTags, true);
+        }
+    }
     if (locationDropdown) locationDropdown.addEventListener('change', highlightRooms);
     
     if (queryParams.highlight_tag && tagDropdown) {

@@ -410,6 +410,24 @@ article#full_info_article {
     line-height: 1;
 }
 
+#meta_tags_toggle {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    gap: 2px;
+}
+
+#meta_tags_toggle input {
+    margin: 0;
+    transform: scale(0.7);
+}
+
+#tag_selector #meta_tags_toggle label {
+    margin-right: 0;
+    font-size: 11px;
+    font-weight: normal;
+}
+
 #tag_dropdown,
 #location_dropdown {
     padding: 3px;
