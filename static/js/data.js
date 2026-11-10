@@ -7,6 +7,7 @@ let db = null;
 let roomData = [];
 let roomById = {};
 let roomByUid = {};
+let roomsByImage = new Map();
 let allTags = [];
 let mapCategories = [];
 let updatedAtValue = '';
@@ -179,11 +180,22 @@ async function saveToCache(data, updatedAt) {
 function buildIndices() {
     roomById = {};
     roomByUid = {};
+    roomsByImage = new Map();
     const tagsSet = new Set();
     const mapsData = {};
     
     for (const room of roomData) {
         roomById[room.id] = room;
+        
+        // Rooms keep their roomData order within each image's list
+        if (room.image) {
+            const imageRooms = roomsByImage.get(room.image);
+            if (imageRooms) {
+                imageRooms.push(room);
+            } else {
+                roomsByImage.set(room.image, [room]);
+            }
+        }
         
         if (room.uid && Array.isArray(room.uid)) {
             for (const uid of room.uid) {
@@ -241,8 +253,20 @@ export function getRoomById(id) {
     return roomByUid[id] || null;
 }
 
+// Strict numeric-id lookup (no uid fallback, unlike getRoomById)
+export function getRoomByNumericId(id) {
+    return roomById[id] || null;
+}
+
 export function getAllRooms() {
     return roomData;
+}
+
+// All rooms (with or without image_coords) on an image, in roomData order.
+// Returns a copy so callers can't mutate the index.
+export function getRoomsByImage(imageName) {
+    const imageRooms = imageName ? roomsByImage.get(imageName) : null;
+    return imageRooms ? imageRooms.slice() : [];
 }
 
 export function getAllTags() {
@@ -254,7 +278,10 @@ export function getMapCategories() {
 }
 
 export function getRoomsOnMap(imageName) {
-    return roomData.filter(r => r.image === imageName && r.image_coords);
+    if (!imageName) {
+        return roomData.filter(r => r.image === imageName && r.image_coords);
+    }
+    return (roomsByImage.get(imageName) || []).filter(r => r.image_coords);
 }
 
 export function getUpdatedAt() {

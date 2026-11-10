@@ -1,4 +1,4 @@
-import { getRoomById, getRoomsOnMap, getMapCategories, getAllRooms, getAllTags } from './data.js';
+import { getRoomById, getRoomByNumericId, getRoomsOnMap, getRoomsByImage, getMapCategories, getAllRooms, getAllTags } from './data.js';
 import { navigate } from './router.js';
 import { announceToScreenReader, escapeHtml, getUpdatedAt } from './utils.js';
 
@@ -534,16 +534,11 @@ function findAdjacentMaps(room) {
     if (!room.image) return [];
     
     const adjacentMaps = {};
-    const allRooms = getAllRooms();
-    const roomById = {};
-    for (const r of allRooms) {
-        roomById[r.id] = r;
-    }
     
     for (const currentRoom of sameImageRooms) {
         if (currentRoom.wayto) {
             for (const exitRoomId of Object.keys(currentRoom.wayto)) {
-                const exitRoom = roomById[parseInt(exitRoomId)];
+                const exitRoom = getRoomByNumericId(parseInt(exitRoomId));
                 if (exitRoom && exitRoom.image && exitRoom.image !== room.image) {
                     if (!adjacentMaps[exitRoom.image]) {
                         let displayName = exitRoom.image;
@@ -1655,15 +1650,13 @@ function loadInlineImagesForTag(tag) {
 
 function loadInlineLocationsForTagAndImage(tag, image) {
     const locationSelect = document.getElementById('inlineLocationSelect');
-    const allRooms = getAllRooms();
     
     const locations = new Set();
     
-    for (const room of allRooms) {
-        const imageMatch = room.image === image;
+    for (const room of getRoomsByImage(image)) {
         const tagMatch = !tag || room.tags?.includes(tag);
         
-        if (imageMatch && tagMatch && room.location) {
+        if (tagMatch && room.location) {
             locations.add(room.location);
         }
     }
@@ -1681,14 +1674,11 @@ function loadInlineLocationsForTagAndImage(tag, image) {
 }
 
 function navigateToInlineTaggedRoom(tag, image, location) {
-    const allRooms = getAllRooms();
-    
-    for (const room of allRooms) {
+    for (const room of getRoomsByImage(image)) {
         const tagMatch = room.tags?.includes(tag);
-        const imageMatch = room.image === image;
         const locationMatch = !location || room.location === location;
         
-        if (tagMatch && imageMatch && locationMatch) {
+        if (tagMatch && locationMatch) {
             let path = `/room/${room.id}?highlight_tag=${encodeURIComponent(tag)}`;
             if (location) {
                 path += `&highlight_location=${encodeURIComponent(location)}`;
