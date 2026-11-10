@@ -2,7 +2,8 @@ import { initData, getUpdatedAt, checkForUpdates, getMapCategories } from './dat
 import { init as initRouter, addRoute, setNotFound, handleRoute, navigate } from './router.js';
 import { renderRoom } from './room.js';
 import { renderSearch } from './search.js';
-import { setUpdatedAt, escapeHtml, announceToScreenReader } from './utils.js';
+import { setUpdatedAt, announceToScreenReader } from './utils.js';
+import { renderNotFound } from './shell.js';
 
 // Last 25% step announced to screen readers during a download
 let lastAnnouncedStep = 0;
@@ -120,50 +121,13 @@ async function main() {
         
         setNotFound((path) => {
             console.log('404:', path);
-            const mapCategories = getMapCategories();
-            let mapOptions = '<option value="">Navigate to map...</option>';
-            for (const [category, maps] of mapCategories) {
-                mapOptions += `<optgroup label="${escapeHtml(category)}">`;
-                for (const [mapName, roomId] of maps) {
-                    mapOptions += `<option value="${roomId}">${escapeHtml(mapName)}</option>`;
-                }
-                mapOptions += '</optgroup>';
-            }
-            
-            app.innerHTML = `
-                <a href="#main-content" class="skip-link">Skip to main content</a>
-                
-                <nav id="navigation" role="navigation" aria-label="Map navigation">
-                    <div id="navigation_header">
-                        <div id="map_navigation">
-                            <select id="map_dropdown" aria-label="Select a map to navigate to">${mapOptions}</select>
-                        </div>
-                    </div>
-                </nav>
-                
-                <main id="main-content" role="main" class="not-found-main">
-                    <h1>Page Not Found</h1>
-                    <p>The page <strong>${escapeHtml(path)}</strong> does not exist.</p>
-                    <p class="not-found-actions">
-                        <a href="#/search" class="not-found-link">← Go to search</a>
-                    </p>
-                    <footer id="updated_at" role="contentinfo" class="not-found-footer">
-                        <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
-                    </footer>
-                </main>
-            `;
-            
-            const mapDropdown = document.getElementById('map_dropdown');
-            if (mapDropdown) {
-                mapDropdown.addEventListener('change', () => {
-                    const selectedRoomId = mapDropdown.value;
-                    if (selectedRoomId) {
-                        navigate(`/room/${selectedRoomId}`);
-                    }
-                });
-            }
-            
-            document.title = 'Page Not Found - Lich Map Room Database';
+            renderNotFound(path, {
+                kind: 'page',
+                app,
+                mapCategories: getMapCategories(),
+                updatedAt: getUpdatedAt(),
+                navigate
+            });
         });
         
         loadingScreen.classList.add('hidden');

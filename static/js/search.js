@@ -1,6 +1,7 @@
 import { getAllRooms, getRoomById, getAllTags, getMapCategories } from './data.js';
 import { navigate, getCurrentPath } from './router.js';
 import { escapeHtml, announceToScreenReader, getUpdatedAt } from './utils.js';
+import { buildMapDropdown, wireMapDropdown } from './shell.js';
 
 const RESULT_PAGE_LIMIT = 100;
 const RESULT_SHOW_ALL_LIMIT = 2000;
@@ -120,18 +121,6 @@ function buildSearchHTML(queryParams) {
     `;
 }
 
-function buildMapDropdown(mapCategories) {
-    let options = '<option value="">Navigate to map...</option>';
-    for (const [category, maps] of mapCategories) {
-        options += `<optgroup label="${escapeAttr(category)}">`;
-        for (const [mapName, roomId] of maps) {
-            options += `<option value="${roomId}">${escapeHtml(mapName)}</option>`;
-        }
-        options += '</optgroup>';
-    }
-    return `<select id="map_dropdown" aria-label="Select a map to navigate to">${options}</select>`;
-}
-
 function buildSearchForms(queryParams) {
     const searchValue = queryParams.q || '';
     
@@ -191,15 +180,7 @@ function buildSearchForms(queryParams) {
 function initSearchInteractions(queryParams) {
     allTagsCache = getAllTags();
     
-    const mapDropdown = document.getElementById('map_dropdown');
-    if (mapDropdown) {
-        mapDropdown.addEventListener('change', () => {
-            const selectedRoomId = mapDropdown.value;
-            if (selectedRoomId) {
-                navigate(`/room/${selectedRoomId}`);
-            }
-        });
-    }
+    wireMapDropdown(document.getElementById('map_dropdown'), navigate);
     
     const basicSearchForm = document.getElementById('basicSearchForm');
     if (basicSearchForm) {

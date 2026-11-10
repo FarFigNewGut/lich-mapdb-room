@@ -1,6 +1,7 @@
 import { getRoomById, getRoomByNumericId, getRoomsOnMap, getRoomsByImage, getMapCategories, getAllRooms, getAllTags } from './data.js';
 import { navigate } from './router.js';
 import { announceToScreenReader, escapeHtml, getUpdatedAt } from './utils.js';
+import { buildMapDropdown, renderNotFound } from './shell.js';
 
 const COMPASS_ORDER = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest', 'up', 'down', 'out'];
 const COMPASS_ALIASES = { n: 'north', ne: 'northeast', e: 'east', se: 'southeast', s: 'south', sw: 'southwest', w: 'west', nw: 'northwest' };
@@ -55,7 +56,7 @@ function formatStringProc(code) {
 export function renderRoom(roomIdOrUid, queryParams = {}) {
     const room = getRoomById(roomIdOrUid);
     if (!room) {
-        return renderNotFound(roomIdOrUid);
+        return renderRoomNotFound(roomIdOrUid);
     }
     
     currentRoom = room;
@@ -72,45 +73,14 @@ export function renderRoom(roomIdOrUid, queryParams = {}) {
     announceToScreenReader(`Loaded room: ${room.title[0]}`);
 }
 
-function renderNotFound(roomIdOrUid) {
-    const app = document.getElementById('app');
-    const mapCategories = getMapCategories();
-    
-    app.innerHTML = `
-        <a href="#main-content" class="skip-link">Skip to main content</a>
-        
-        <nav id="navigation" role="navigation" aria-label="Map navigation">
-            <div id="navigation_header">
-                <div id="map_navigation">
-                    ${buildMapDropdown(mapCategories)}
-                </div>
-            </div>
-        </nav>
-        
-        <main id="main-content" role="main" class="not-found-main">
-            <h1>Room Not Found</h1>
-            <p>Could not find room with ID or UID: <strong>${escapeHtml(String(roomIdOrUid))}</strong></p>
-            <p>The room may have been removed from the database, or the ID may be incorrect.</p>
-            <p class="not-found-actions">
-                <a href="#/search" class="not-found-link">← Return to search</a>
-            </p>
-            <footer id="updated_at" role="contentinfo" class="not-found-footer">
-                <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
-            </footer>
-        </main>
-    `;
-    
-    const mapDropdown = document.getElementById('map_dropdown');
-    if (mapDropdown) {
-        mapDropdown.addEventListener('change', () => {
-            const selectedRoomId = mapDropdown.value;
-            if (selectedRoomId) {
-                navigate(`/room/${selectedRoomId}`);
-            }
-        });
-    }
-    
-    document.title = 'Room Not Found - Lich Map Room Database';
+function renderRoomNotFound(roomIdOrUid) {
+    renderNotFound(roomIdOrUid, {
+        kind: 'room',
+        app: document.getElementById('app'),
+        mapCategories: getMapCategories(),
+        updatedAt: getUpdatedAt(),
+        navigate
+    });
     announceToScreenReader('Room not found');
 }
 
@@ -176,18 +146,6 @@ function buildRoomHTML(room, queryParams) {
             </div>
         </main>
     `;
-}
-
-function buildMapDropdown(mapCategories) {
-    let options = '<option value="">Navigate to map...</option>';
-    for (const [category, maps] of mapCategories) {
-        options += `<optgroup label="${escapeAttr(category)}">`;
-        for (const [mapName, roomId] of maps) {
-            options += `<option value="${roomId}">${escapeHtml(mapName)}</option>`;
-        }
-        options += '</optgroup>';
-    }
-    return `<select id="map_dropdown" aria-label="Select a map to navigate to">${options}</select>`;
 }
 
 function buildAdjacentMapDropdown(adjacentMaps) {
