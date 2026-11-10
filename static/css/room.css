@@ -2538,3 +2538,158 @@ mark.result-match {
         border-color: #334155;
     }
 }
+
+/* ==========================================================================
+   Loading screen: download progress and error recovery
+   ========================================================================== */
+.loading-bar {
+    width: min(320px, 80vw);
+    height: 6px;
+    margin-top: 14px;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+/* Determinate: the width comes from --progress (0-100), set from app.js */
+.loading-bar-fill {
+    width: calc(var(--progress, 0) * 1%);
+    height: 100%;
+    border-radius: 3px;
+    background-color: #0066cc;
+}
+
+/* Indeterminate (download size unknown): a short bar sweeps across the track */
+.loading-bar-indeterminate .loading-bar-fill {
+    width: 40%;
+    animation: loading-bar-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes loading-bar-sweep {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(250%);
+    }
+}
+
+.loading-detail {
+    margin-top: 8px;
+    color: #475569;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+.loading-note {
+    max-width: 36ch;
+    margin-top: 6px;
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.loading-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: 42ch;
+    padding: 0 16px;
+    text-align: center;
+}
+
+.loading-error[hidden] {
+    display: none;
+}
+
+.loading-error-message {
+    margin: 0;
+    color: #b91c1c;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.loading-error-detail {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.loading-error-detail:empty {
+    display: none;
+}
+
+.loading-retry {
+    width: auto;
+    margin: 8px 0 0;
+    padding: 8px 24px;
+    border: 1px solid #0066cc;
+    border-radius: 6px;
+    background-color: #0066cc;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.loading-retry:hover {
+    border-color: #0055aa;
+    background-color: #0055aa;
+}
+
+@media (prefers-color-scheme: dark) {
+    .loading-bar {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .loading-bar-fill {
+        background-color: #66b3ff;
+    }
+
+    .loading-detail,
+    .loading-note {
+        color: #cbd5e1;
+    }
+
+    .loading-error-message {
+        color: #fca5a5;
+    }
+
+    .loading-error-detail {
+        color: #94a3b8;
+    }
+
+    .loading-retry {
+        border-color: #1d6fd1;
+        background-color: #1d6fd1;
+    }
+
+    .loading-retry:hover {
+        border-color: #1a5fb4;
+        background-color: #1a5fb4;
+    }
+
+    .loading-retry:focus {
+        outline-color: #66b3ff;
+    }
+}
+
+/* Reduced motion: no sweeping bar. An unknown-size download shows a static striped
+   bar across the whole track, with the downloaded size in the text beneath it. */
+@media (prefers-reduced-motion: reduce) {
+    .loading-bar-indeterminate .loading-bar-fill {
+        width: 100%;
+        animation: none;
+        background-image: repeating-linear-gradient(
+            -45deg,
+            rgba(255, 255, 255, 0.45) 0,
+            rgba(255, 255, 255, 0.45) 6px,
+            transparent 6px,
+            transparent 12px
+        );
+    }
+}

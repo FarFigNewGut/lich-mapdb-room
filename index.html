@@ -22,8 +22,20 @@
 <body>
     <!-- Loading Screen (styles live in static/css/room.css) -->
     <div id="loading-screen" class="loading-screen" role="status" aria-live="polite">
-        <div class="loading-spinner" aria-hidden="true"></div>
+        <div id="loading-spinner" class="loading-spinner" aria-hidden="true"></div>
         <div id="loading-progress" class="loading-progress">Loading room data...</div>
+        <!-- Download progress: visual only (aria-hidden); the polite status text above is updated at coarse steps -->
+        <div id="loading-bar" class="loading-bar" aria-hidden="true" hidden>
+            <div id="loading-bar-fill" class="loading-bar-fill"></div>
+        </div>
+        <div id="loading-detail" class="loading-detail" aria-hidden="true" hidden></div>
+        <div id="loading-note" class="loading-note" hidden></div>
+        <!-- Error state: announced assertively from app.js, so this container stays silent -->
+        <div id="loading-error" class="loading-error" aria-live="off" hidden>
+            <p id="loading-error-message" class="loading-error-message"></p>
+            <p id="loading-error-detail" class="loading-error-detail"></p>
+            <button type="button" id="loading-retry" class="loading-retry">Retry</button>
+        </div>
     </div>
     
     <!-- App Container -->
