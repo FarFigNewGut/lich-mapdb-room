@@ -1,10 +1,18 @@
-/* Accessibility improvements */
+/* ==========================================================================
+   Lich Map Room Database: main stylesheet
+   Load order: pico.min.css, tokens.css, room.css.
+   Colours come from tokens.css (var(--...)), so light and dark themes are
+   switched there. Rules keep their original cascade order; sections below
+   are labelled, and later sections intentionally refine earlier ones.
+
+   BASE: accessibility helpers, focus ring, headings, lists, landmarks
+   ========================================================================== */
 .skip-link {
     position: absolute;
     top: -40px;
     left: 6px;
-    background: #000;
-    color: #fff;
+    background: var(--static-black);
+    color: var(--static-white);
     padding: 8px;
     text-decoration: none;
     z-index: 10000;
@@ -45,9 +53,9 @@
 /* Enhanced focus indicators.
    :focus-visible shows the ring for keyboard users (and for text fields, where browsers
    always treat focus as visible) but not after a mouse click on a button or link.
-   #0066cc is 5.6:1 on white; the dark theme uses a lighter blue (see the dark block below). */
+   #0066cc is 5.6:1 on white; in dark mode --focus-ring becomes a lighter blue. */
 *:focus-visible {
-    outline: 2px solid #0066cc;
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
 }
 
@@ -55,7 +63,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 a:focus-visible {
-    outline: 3px solid #0066cc;
+    outline: 3px solid var(--focus-ring);
     outline-offset: 2px;
 }
 
@@ -65,19 +73,9 @@ button:focus:not(:focus-visible),
     box-shadow: none;
 }
 
-@media (prefers-color-scheme: dark) {
-    *:focus-visible,
-    button:focus-visible,
-    input:focus-visible,
-    select:focus-visible,
-    a:focus-visible {
-        outline-color: #66b3ff;
-    }
-}
-
 .room-tags {
     font-size: 12px;
-    color: #666;
+    color: var(--text-meta-dim);
     font-style: italic;
 }
 
@@ -106,7 +104,7 @@ h3 {
     margin-top: 5px;
     margin-bottom: 5px;
     margin-left: 25px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--static-grey-300);
     padding-bottom: 5px;
     color: inherit;
 }
@@ -171,7 +169,7 @@ footer {
 /* High contrast and visual accessibility improvements */
 @media (prefers-contrast: high) {
     *:focus-visible {
-        outline: 4px solid #000;
+        outline: 4px solid var(--static-black);
         outline-offset: 2px;
     }
 
@@ -179,9 +177,9 @@ footer {
     input:focus-visible,
     select:focus-visible,
     a:focus-visible {
-        outline: 4px solid #000;
+        outline: 4px solid var(--static-black);
         outline-offset: 2px;
-        background-color: #ffff00;
+        background-color: var(--static-yellow);
     }
 }
 
@@ -192,6 +190,9 @@ footer {
     }
 }
 
+/* ==========================================================================
+   ROOM PAGE: info text, tables, status messages
+   ========================================================================== */
 /* Better contrast for room information */
 .room-location {
     font-size: 14px;
@@ -201,7 +202,7 @@ footer {
 }
 
 th[scope="row"] {
-    background-color: #f5f5f5;
+    background-color: var(--surface-legacy);
     font-weight: bold;
     text-align: left;
     padding: 8px;
@@ -225,24 +226,27 @@ table caption {
 }
 
 [role="alert"] {
-    background-color: #fef2f2;
-    border-color: #dc2626;
-    color: #dc2626;
+    background-color: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
 }
 
 [role="status"] {
-    background-color: #fffbeb;
-    border-color: #d97706;
-    color: #92400e;
+    background-color: var(--warning-bg);
+    border-color: var(--warning-border);
+    color: var(--warning-text);
 }
 
 /* Loading states */
 select[disabled] {
-    background-color: #f9f9f9;
-    color: #666;
+    background-color: var(--surface-disabled);
+    color: var(--text-disabled);
     cursor: not-allowed;
 }
 
+/* ==========================================================================
+   MAP: image, wrapper, current-room box, highlight boxes
+   ========================================================================== */
 .highlight_box {
     padding: 0;
     position: absolute;
@@ -273,7 +277,7 @@ select[disabled] {
     position: relative;
 }
 
-#image_div { 
+#image_div {
     padding: 0;
 }
 
@@ -333,6 +337,9 @@ article#full_info_article {
     margin: 5px 25px;
 }
 
+/* ==========================================================================
+   ROOM PAGE: sticky header, tag and location selectors, Dim map, nav icons
+   ========================================================================== */
 #sticky-header {
     position: sticky;
     top: 0;
@@ -348,7 +355,7 @@ article#full_info_article {
 }
 
 #header {
-	padding: 0 25px 0 25px;
+    padding: 0 25px 0 25px;
 }
 
 #title_row {
@@ -404,7 +411,7 @@ article#full_info_article {
     padding: 3px;
     margin-bottom: 0px;
     font-size: 12px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--static-grey-300);
     border-radius: 3px;
     min-width: 120px;
     max-width: 200px;
@@ -421,7 +428,7 @@ article#full_info_article {
     margin-left: 0;
     padding: 4px 12px 4px 8px;
     flex-shrink: 0;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 999px;
 }
 
@@ -439,8 +446,8 @@ article#full_info_article {
 }
 
 #opacity_toggle:has(input:checked) {
-    border-color: #0066cc;
-    background-color: rgba(0, 102, 204, 0.1);
+    border-color: var(--accent);
+    background-color: var(--accent-tint);
 }
 
 #map_navigation {
@@ -457,7 +464,7 @@ article#full_info_article {
 #adjacent_map_dropdown {
     padding: 2px 4px;
     font-size: 11px !important;
-    border: 1px solid #ccc;
+    border: 1px solid var(--static-grey-300);
     border-radius: 3px;
     max-width: 200px;
     line-height: 1.2;
@@ -501,7 +508,7 @@ article#full_info_article {
 #search_link:focus-visible,
 #scroll_top_btn:focus-visible,
 #copy_link_btn:focus-visible {
-    outline: 3px solid #0066cc;
+    outline: 3px solid var(--focus-ring);
     outline-offset: 1px;
     box-shadow: none;
 }
@@ -510,8 +517,8 @@ article#full_info_article {
 #adjacent_map_dropdown optgroup {
     font-weight: bold;
     font-size: 12px !important;
-    background-color: #e6f3ff;
-    color: #0066cc;
+    background-color: var(--surface-tint);
+    color: var(--accent);
     padding: 2px 4px;
 }
 
@@ -519,20 +526,7 @@ article#full_info_article {
 #adjacent_map_dropdown option {
     font-weight: normal;
     font-size: 11px !important;
-    color: #334155 !important;
-}
-
-@media (prefers-color-scheme: dark) {
-    #map_dropdown optgroup,
-    #adjacent_map_dropdown optgroup {
-        background-color: #1e293b;
-        color: #66b3ff;
-    }
-
-    #map_dropdown option,
-    #adjacent_map_dropdown option {
-        color: hsl(205deg, 16%, 77%) !important;
-    }
+    color: var(--select-option-text) !important;
 }
 
 #mapimage.opacity_active {
@@ -570,9 +564,9 @@ article#full_info_article {
 
 .highlight_box,
 .highlight_box_example {
-    border: 3px solid #f59e0b;
-    background-color: rgba(245, 158, 11, 0.3);
-    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), 0 0 8px 3px rgba(245, 158, 11, 0.8);
+    border: 3px solid var(--hl-current);
+    background-color: rgba(var(--hl-current-rgb), 0.3);
+    box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), 0 0 8px 3px rgba(var(--hl-current-rgb), 0.8);
 }
 
 .highlight_box {
@@ -581,34 +575,33 @@ article#full_info_article {
 
 .tag_highlight_box,
 .tag_highlight_box_example {
-    border: 3px solid #0f766e;
-    background-color: rgba(20, 184, 166, 0.25);
-    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.85);
+    border: 3px solid var(--hl-tag);
+    background-color: rgba(var(--hl-tag-rgb), 0.25);
+    box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), inset 0 0 0 1px var(--hl-inner);
 }
 
 .location_highlight_box,
 .location_highlight_box_example {
-    border: 3px dashed #6d28d9;
-    background-color: rgba(124, 58, 237, 0.2);
-    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.85);
+    border: 3px dashed var(--hl-location);
+    background-color: rgba(var(--hl-location-rgb), 0.2);
+    box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), inset 0 0 0 1px var(--hl-inner);
 }
 
 .both_highlight_box,
 .both_highlight_box_example {
-    border: 3px solid #0f766e;
-    background-color: rgba(20, 184, 166, 0.22);
-    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45),
-        inset 0 0 0 1px #fff, inset 0 0 0 3px #6d28d9, inset 0 0 0 4px #fff;
+    border: 3px solid var(--hl-tag);
+    background-color: rgba(var(--hl-tag-rgb), 0.22);
+    box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), inset 0 0 0 1px var(--static-white), inset 0 0 0 3px var(--hl-location), inset 0 0 0 4px var(--static-white);
 }
 
 @keyframes room-glow {
     0%,
     100% {
-        box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), 0 0 4px 1px rgba(245, 158, 11, 0.55);
+        box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), 0 0 4px 1px rgba(var(--hl-current-rgb), 0.55);
     }
 
     50% {
-        box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), 0 0 12px 5px rgba(245, 158, 11, 0.95);
+        box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), 0 0 12px 5px rgba(var(--hl-current-rgb), 0.95);
     }
 }
 
@@ -621,9 +614,12 @@ article#full_info_article {
     }
 }
 
+/* ==========================================================================
+   HELP POPUP: highlight legend dialog
+   ========================================================================== */
 #help_icon {
-    background-color: #0066cc;
-    color: white;
+    background-color: var(--static-accent);
+    color: var(--static-white);
     border: none;
     border-radius: 50%;
     width: 24px;
@@ -643,7 +639,7 @@ article#full_info_article {
 }
 
 #help_icon:hover {
-    background-color: #004d99;
+    background-color: var(--static-accent-pressed);
 }
 
 #help_popup {
@@ -661,8 +657,8 @@ article#full_info_article {
 
 /* Restore smaller help popup */
 #help_popup_content {
-    background-color: #11191f;
-    color: white;
+    background-color: var(--static-ink);
+    color: var(--static-white);
     padding: 15px;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -677,7 +673,7 @@ article#full_info_article {
     right: 12px;
     font-size: 16px;
     cursor: pointer;
-    color: #ccc;
+    color: var(--static-grey-300);
     width: 20px;
     height: 20px;
     display: flex;
@@ -690,11 +686,11 @@ article#full_info_article {
 
 #help_close:hover,
 #help_close:focus-visible {
-    color: white;
+    color: var(--static-white);
 }
 
 #help_close:focus-visible {
-    outline: 2px solid #fff;
+    outline: 2px solid var(--static-white);
 }
 
 #help_popup h2 {
@@ -715,40 +711,21 @@ article#full_info_article {
     position: relative;
 }
 
-/* Dark mode support */
+/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
 @media (prefers-color-scheme: dark) {
     .room-ids,
     .room-location {
-        color: #ccc;
-    }
-
-    .room-tags {
-        color: #aaa;
+        color: var(--static-grey-300);
     }
 
     th[scope="row"] {
-        background-color: #2a2a2a;
-        color: #fff;
-    }
-
-    [role="alert"] {
-        background-color: #2d1b1b;
-        border-color: #ef4444;
-        color: #fecaca;
-    }
-
-    [role="status"] {
-        background-color: #2d2416;
-        border-color: #f59e0b;
-        color: #fcd34d;
-    }
-
-    select[disabled] {
-        background-color: #0f172a;
-        color: #94a3b8;
+        color: var(--static-white);
     }
 }
 
+/* ==========================================================================
+   SEARCH PAGE: layout, forms, autocomplete, results, map groups
+   ========================================================================== */
 /* Search page layout and forms.
    Selectors prefixed with #main-content are intentional: Pico styles inputs with
    input:not([type=...]) chains that a plain class cannot out-rank. */
@@ -758,7 +735,7 @@ article#full_info_article {
 
 .search-intro {
     margin-bottom: 15px;
-    color: #475569;
+    color: var(--text-intro);
     font-size: 14px;
 }
 
@@ -833,8 +810,8 @@ article#full_info_article {
     overflow-y: auto;
     list-style: none;
     font-size: 14px;
-    border: 1px solid #ccc;
-    background: #fff;
+    border: 1px solid var(--border-legacy);
+    background: var(--surface);
 }
 
 .tag-suggestions.visible {
@@ -847,17 +824,17 @@ article#full_info_article {
     justify-content: space-between;
     gap: 12px;
     padding: 6px 8px;
-    border-bottom: 1px solid #eee;
-    background-color: #fff;
-    color: #334155;
+    border-bottom: 1px solid var(--border-legacy-row);
+    background-color: var(--surface);
+    color: var(--text);
     list-style: none;
     cursor: pointer;
 }
 
 .suggestion-item:hover,
 .suggestion-item.selected {
-    background-color: #0066cc;
-    color: #fff;
+    background-color: var(--accent-fill);
+    color: var(--static-white);
 }
 
 /* Compact and accessible search results styling.
@@ -871,7 +848,7 @@ ul.search-results-list {
 ul.search-results-list .search-result-item {
     margin-bottom: 8px;
     padding: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-result);
     border-radius: 4px;
 }
 
@@ -886,19 +863,19 @@ ul.search-results-list a.result-link {
 
 ul.search-results-list a.result-link:hover,
 ul.search-results-list a.result-link:focus-visible {
-    background-color: #f0f8ff;
+    background-color: var(--surface-link-hover);
     text-decoration: none;
 }
 
 ul.search-results-list a.result-link:focus-visible {
-    outline: 2px solid #0066cc;
+    outline: 2px solid var(--static-accent);
     outline-offset: 1px;
 }
 
 .result-title {
     display: block;
     font-weight: bold;
-    color: #0066cc;
+    color: var(--accent);
     font-size: 14px;
     line-height: 1.2;
     margin-bottom: 2px;
@@ -911,7 +888,7 @@ ul.search-results-list a.result-link:focus-visible {
     gap: 4px 10px;
     font-size: 12px;
     font-weight: normal;
-    color: #666;
+    color: var(--text-meta);
     line-height: 1.4;
 }
 
@@ -929,9 +906,9 @@ ul.search-results-list a.result-link:focus-visible {
     width: 100%;
     padding: 8px 12px;
     margin: 0;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-legacy-button);
     border-radius: 4px;
-    background-color: #f5f5f5;
+    background-color: var(--surface-legacy);
     color: inherit;
     text-align: left;
     cursor: pointer;
@@ -943,32 +920,35 @@ ul.search-results-list a.result-link:focus-visible {
 
 .map-group-button:hover,
 .map-group-button:focus-visible {
-    background-color: #e6f3ff;
-    border-color: #0066cc;
+    background-color: var(--surface-tint-hover);
+    border-color: var(--accent);
 }
 
 .map-group-button:focus-visible {
-    outline: 2px solid #0066cc;
+    outline: 2px solid var(--static-accent);
     outline-offset: 1px;
 }
 
 .map-name {
     font-weight: bold;
-    color: #0066cc;
+    color: var(--accent);
 }
 
 .map-count {
     flex: none;
     font-size: 12px;
     font-weight: 600;
-    color: #666;
+    color: var(--text-meta);
     font-variant-numeric: tabular-nums;
 }
 
 .unmapped-button .map-name {
-    color: #92400e;
+    color: var(--unmapped-text);
 }
 
+/* ==========================================================================
+   LOADING SCREEN AND UPDATE BANNER
+   ========================================================================== */
 /* Fullscreen loading screen.
    The #loading-screen resets neutralize the global [role="status"] box
    (border, padding, margin) that would otherwise frame the loader. */
@@ -995,8 +975,8 @@ ul.search-results-list a.result-link:focus-visible {
 .loading-spinner {
     width: 48px;
     height: 48px;
-    border: 4px solid rgba(0, 0, 0, 0.15);
-    border-top-color: #0066cc;
+    border: 4px solid var(--spinner-track);
+    border-top-color: var(--spinner-head);
     border-radius: 50%;
     animation: loading-spin 1s linear infinite;
 }
@@ -1027,8 +1007,8 @@ ul.search-results-list a.result-link:focus-visible {
     padding: 10px 15px;
     border: 0;
     border-radius: 0;
-    background: #1a5f7a;
-    color: #fff;
+    background: var(--banner-bg);
+    color: var(--banner-text);
     font-size: 14px;
 }
 
@@ -1045,106 +1025,36 @@ ul.search-results-list a.result-link:focus-visible {
 }
 
 .update-banner-refresh {
-    background: #fff;
-    color: #1a5f7a;
+    background: var(--banner-action);
+    color: var(--banner-bg);
     border: none;
     font-weight: bold;
 }
 
 .update-banner-dismiss {
     background: transparent;
-    color: #fff;
-    border: 1px solid #fff;
+    color: var(--banner-action);
+    border: 1px solid var(--banner-action);
 }
 
 .update-banner button:focus-visible {
-    outline-color: #fff;
+    outline-color: var(--static-white);
 }
 
-/* Dark mode support for search page, results, loader and update banner */
+/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
 @media (prefers-color-scheme: dark) {
-    .search-intro {
-        color: #b4bfcc;
-    }
-
-    .tag-suggestions {
-        border-color: #475569;
-        background: #1e293b;
-    }
-
-    .suggestion-item {
-        border-bottom-color: #334155;
-        background-color: #1e293b;
-        color: #e2e8f0;
-    }
-
-    .suggestion-item:hover,
-    .suggestion-item.selected {
-        background-color: #1d6fd1;
-        color: #fff;
-    }
-
-    ul.search-results-list .search-result-item {
-        border-color: #444;
-    }
-
     ul.search-results-list a.result-link:hover,
     ul.search-results-list a.result-link:focus-visible {
-        background-color: #2a2a2a;
-        outline-color: #66b3ff;
-    }
-
-    .result-title {
-        color: #66b3ff;
-    }
-
-    .result-meta {
-        color: #bbb;
-    }
-
-    .map-group-button {
-        background-color: #2a2a2a;
-        border-color: #555;
+        outline-color: var(--focus-ring);
     }
 
     .map-group-button:hover,
     .map-group-button:focus-visible {
-        background-color: #333;
-        border-color: #66b3ff;
-        outline-color: #66b3ff;
-    }
-
-    .map-name {
-        color: #66b3ff;
-    }
-
-    .map-count {
-        color: #bbb;
-    }
-
-    .unmapped-button .map-name {
-        color: #fbbf24;
-    }
-
-    .loading-spinner {
-        border-color: rgba(255, 255, 255, 0.3);
-        border-top-color: #fff;
+        outline-color: var(--focus-ring);
     }
 
     .update-banner[role="alert"] {
         border-bottom: 1px solid #2c7a99;
-        background: #0f3b4d;
-        color: #f1f5f9;
-    }
-
-    .update-banner-refresh {
-        background: #e2e8f0;
-        color: #0f3b4d;
-    }
-
-    .update-banner-dismiss {
-        color: #e2e8f0;
-        border-color: #e2e8f0;
     }
 }
 
@@ -1153,7 +1063,7 @@ ul.search-results-list a.result-link:focus-visible {
     .loading-spinner {
         /* Static fallback: a half-colored ring still reads as "loading" */
         animation: none;
-        border-right-color: #0066cc;
+        border-right-color: var(--spinner-head);
     }
 
     ul.search-results-list a.result-link,
@@ -1162,15 +1072,12 @@ ul.search-results-list a.result-link:focus-visible {
     }
 }
 
-@media (prefers-reduced-motion: reduce) and (prefers-color-scheme: dark) {
-    .loading-spinner {
-        border-right-color: #fff;
-    }
-}
-
+/* ==========================================================================
+   ROOM PAGE: room card, exits, StringProc tabs, details, inline search
+   ========================================================================== */
 .room-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 24px;
     margin-left: 25px;
@@ -1188,28 +1095,28 @@ ul.search-results-list a.result-link:focus-visible {
     font-size: 16px;
     line-height: 1.7;
     margin-bottom: 24px;
-    color: #334155;
+    color: var(--text);
 }
 
 .room-paths {
     margin-bottom: 20px;
-    color: #475569;
+    color: var(--text-secondary-dim);
     font-size: 15px;
     padding: 12px 16px;
-    background-color: #f8fafc;
+    background-color: var(--surface-inset);
     border-radius: 8px;
-    border: 1px solid #f1f5f9;
+    border: 1px solid var(--border-faint-card);
 }
 
 .path-link {
-    color: #0066cc;
+    color: var(--accent);
     text-decoration: none;
     font-weight: 600;
     transition: color 0.2s;
 }
 
 .path-link:hover {
-    color: #0055aa;
+    color: var(--accent-text-hover);
     text-decoration: underline;
 }
 
@@ -1224,9 +1131,9 @@ ul.search-results-list a.result-link:focus-visible {
     display: inline-flex;
     align-items: center;
     padding: 4px 12px;
-    background-color: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    background-color: var(--surface-chip);
+    color: var(--text-secondary-bright);
+    border: 1px solid var(--surface-chip-hover);
     border-radius: 9999px;
     font-size: 13px;
     font-weight: 600;
@@ -1235,9 +1142,9 @@ ul.search-results-list a.result-link:focus-visible {
 }
 
 .tag-badge:hover {
-    background-color: #e2e8f0;
-    color: #1e293b;
-    border-color: #cbd5e1;
+    background-color: var(--surface-chip-hover);
+    color: var(--text-chip-hover);
+    border-color: var(--border-chip-hover);
 }
 
 .exits-section {
@@ -1245,7 +1152,7 @@ ul.search-results-list a.result-link:focus-visible {
     margin-left: 25px;
     margin-right: 25px;
     padding-bottom: 25px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border);
 }
 
 .exits-heading {
@@ -1253,9 +1160,9 @@ ul.search-results-list a.result-link:focus-visible {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    color: #64748b;
+    color: var(--text-muted);
     margin-bottom: 20px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border);
     padding-bottom: 8px;
 }
 
@@ -1272,11 +1179,11 @@ ul.search-results-list a.result-link:focus-visible {
     justify-content: center;
     gap: 2px;
     padding: 6px 10px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 6px;
     text-decoration: none;
-    color: #334155;
+    color: var(--text-soft);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -1289,12 +1196,12 @@ ul.search-results-list a.result-link:focus-visible {
     left: 0;
     height: 3px;
     width: 0%;
-    background-color: #0066cc;
+    background-color: var(--static-accent);
     transition: width 0.2s ease;
 }
 
 .exit-item:hover {
-    border-color: #cbd5e1;
+    border-color: var(--border-accent-hover);
     transform: translateY(-2px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     text-decoration: none;
@@ -1305,8 +1212,8 @@ ul.search-results-list a.result-link:focus-visible {
 }
 
 .exit-item:focus-visible {
-    border-color: #0066cc;
-    outline: 2px solid #0066cc;
+    border-color: var(--accent);
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
 }
 
@@ -1323,14 +1230,14 @@ ul.search-results-list a.result-link:focus-visible {
     overflow: hidden;
     font-size: 12px;
     line-height: 1.25;
-    color: #475569;
+    color: var(--text-secondary-dim);
 }
 
 .exit-command {
     min-width: 0;
     overflow-wrap: anywhere;
     font-weight: 600;
-    color: #0066cc;
+    color: var(--accent);
     font-family: monospace;
     font-size: 11px;
 }
@@ -1357,10 +1264,10 @@ ul.search-results-list a.result-link:focus-visible {
 
 .exit-id {
     flex: none;
-    color: #64748b;
+    color: var(--text-muted);
     font-family: monospace;
     font-size: 10px;
-    background: #f1f5f9;
+    background: var(--surface-code);
     padding: 1px 4px;
     border-radius: 3px;
 }
@@ -1376,8 +1283,8 @@ ul.search-results-list a.result-link:focus-visible {
     padding: 4px 10px;
     border: 1px solid #cbd5e1;
     border-right: none;
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--surface-control);
+    color: var(--text-muted);
     font-size: 14px;
     font-weight: 500;
     text-transform: uppercase;
@@ -1390,27 +1297,27 @@ ul.search-results-list a.result-link:focus-visible {
 }
 
 .exits-tab:last-child {
-    border-right: 1px solid #cbd5e1;
+    border-right: 1px solid var(--border-control);
     border-radius: 0 3px 3px 0;
 }
 
 .exits-tab:hover {
-    background: #e2e8f0;
-    color: #334155;
+    background: var(--surface-hover);
+    color: var(--text);
 }
 
 .exits-tab[aria-selected="true"] {
-    background: #0066cc;
-    color: white;
-    border-color: #0066cc;
+    background: var(--accent-selected);
+    color: var(--static-white);
+    border-color: var(--accent-selected);
 }
 
 .exits-tab:last-child[aria-selected="true"] {
-    border-right-color: #0066cc;
+    border-right-color: var(--accent-selected);
 }
 
 .exits-tab:focus-visible {
-    outline: 2px solid #0066cc;
+    outline: 2px solid var(--focus-ring);
     outline-offset: 1px;
     z-index: 1;
     position: relative;
@@ -1418,9 +1325,9 @@ ul.search-results-list a.result-link:focus-visible {
 
 .stringproc-panel {
     padding: 6px 10px;
-    background: #f8fafc;
+    background: var(--surface-panel);
     border-radius: 4px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
 }
 
 .stringproc-subtabs {
@@ -1433,12 +1340,12 @@ ul.search-results-list a.result-link:focus-visible {
 .stringproc-subtab {
     display: inline-block;
     padding: 3px 8px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 3px;
-    background: #f1f5f9;
+    background: var(--surface-control);
     font-family: monospace;
     font-size: 12px;
-    color: #475569;
+    color: var(--text-secondary-bright);
     cursor: pointer;
 }
 
@@ -1455,25 +1362,25 @@ ul.search-results-list a.result-link:focus-visible {
 }
 
 .stringproc-subtab:hover {
-    background: #e2e8f0;
-    border-color: #94a3b8;
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
 }
 
 .stringproc-subtab[aria-selected="true"] {
-    background: #0066cc;
-    color: white;
-    border-color: #0066cc;
+    background: var(--accent-selected);
+    color: var(--static-white);
+    border-color: var(--accent-selected);
 }
 
 .stringproc-subtab:focus-visible {
-    outline: 2px solid #0066cc;
+    outline: 2px solid var(--focus-ring);
     outline-offset: 1px;
 }
 
 .stringproc-code-container {
     overflow-y: auto;
     border-radius: 3px;
-    background: #1e1e1e;
+    background: var(--static-code-bg);
 }
 
 .stringproc-code-container pre,
@@ -1481,7 +1388,7 @@ ul.search-results-list a.result-link:focus-visible {
     margin: 0 !important;
     padding: 6px !important;
     border-radius: 3px !important;
-    background: #1e1e1e !important;
+    background: var(--static-code-bg) !important;
 }
 
 .stringproc-code-container code,
@@ -1517,7 +1424,7 @@ ul.search-results-list a.result-link:focus-visible {
 details summary {
     cursor: pointer;
     font-weight: 600;
-    color: #475569;
+    color: var(--text-secondary-dim);
     padding: 8px 0;
     user-select: none;
     transition: color 0.2s;
@@ -1542,11 +1449,11 @@ details[open] summary::before {
 }
 
 details summary:hover {
-    color: #0066cc;
+    color: var(--accent);
 }
 
 details summary:hover::before {
-    color: #0066cc;
+    color: var(--accent);
 }
 
 .inline-search-section {
@@ -1554,7 +1461,7 @@ details summary:hover::before {
     margin-left: 25px;
     margin-right: 25px;
     padding-top: 25px;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--border);
 }
 
 .inline-search {
@@ -1567,7 +1474,7 @@ details summary:hover::before {
 .inline-search input {
     flex-grow: 1;
     padding: 10px 16px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 6px;
     font-size: 16px;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -1575,14 +1482,14 @@ details summary:hover::before {
 }
 
 .inline-search input:focus {
-    border-color: #0066cc;
-    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus-glow);
 }
 
 .inline-search button {
     padding: 10px 24px;
-    background-color: #0066cc;
-    color: white;
+    background-color: var(--static-accent);
+    color: var(--static-white);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -1593,7 +1500,7 @@ details summary:hover::before {
 }
 
 .inline-search button:hover {
-    background-color: #0055aa;
+    background-color: var(--accent-fill-hover-lift);
     transform: translateY(-1px);
 }
 
@@ -1601,167 +1508,20 @@ details summary:hover::before {
     transform: translateY(0);
 }
 
+/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
 @media (prefers-color-scheme: dark) {
-    .room-card {
-        background: #1e293b;
-        border-color: #334155;
-    }
-    
-    .room-description {
-        color: #e2e8f0;
-    }
-    
-    .room-paths {
-        color: #94a3b8;
-        background-color: #0f172a;
-        border-color: #1e293b;
-    }
-    
-    .path-link {
-        color: #66b3ff;
-    }
-    
-    .path-link:hover {
-        color: #99ccff;
-    }
-    
-    .tag-badge {
-        background-color: #334155;
-        color: #e2e8f0;
-        border-color: #475569;
-    }
-    
-    .tag-badge:hover {
-        background-color: #475569;
-        color: #fff;
-        border-color: #64748b;
-    }
-
-    .exits-heading {
-        color: #94a3b8;
-        border-bottom-color: #334155;
-    }
-    
-    .exit-item {
-        background: #1e293b;
-        border-color: #334155;
-        color: #cbd5e1;
-    }
-    
-    .exit-item:hover, .exit-item:focus-visible {
-        background-color: #334155;
-        border-color: #66b3ff;
-    }
-
+    .exit-item:hover,
     .exit-item:focus-visible {
-        outline-color: #66b3ff;
-    }
-    
-    .exit-command {
-        color: #66b3ff;
+        background-color: #334155;
     }
 
-    .exit-destination {
-        color: #94a3b8;
-    }
-    
-    .exit-id {
-        background: #0f172a;
-        color: #94a3b8;
-    }
-    
-    .exits-section {
-        border-bottom-color: #334155;
-    }
-    
     .exits-tab {
-        background: #1e293b;
         border-color: #475569;
-        color: #94a3b8;
-    }
-    
-    .exits-tab:last-child {
-        border-right-color: #475569;
-    }
-    
-    .exits-tab:hover {
-        color: #e2e8f0;
-        background: #334155;
-    }
-    
-    .exits-tab[aria-selected="true"] {
-        background: #3399ff;
-        border-color: #3399ff;
-        color: white;
-    }
-    
-    .exits-tab:last-child[aria-selected="true"] {
-        border-right-color: #3399ff;
-    }
-    
-    .exits-tab:focus-visible {
-        outline-color: #66b3ff;
-    }
-    
-    .stringproc-panel {
-        background: #1e293b;
-        border-color: #334155;
-    }
-    
-    .stringproc-subtab {
-        background: #1e293b;
-        border-color: #475569;
-        color: #e2e8f0;
-    }
-    
-    .stringproc-subtab:hover {
-        background: #334155;
-        border-color: #64748b;
-    }
-    
-    .stringproc-subtab[aria-selected="true"] {
-        background: #3399ff;
-        border-color: #3399ff;
-        color: white;
-    }
-    
-    .stringproc-subtab:focus-visible {
-        outline-color: #66b3ff;
     }
 
-    .inline-search-section {
-        border-top-color: #334155;
-    }
-    
     .inline-search input {
         background-color: #1e293b;
-        border-color: #475569;
-        color: #fff;
-    }
-
-    .inline-search input:focus {
-        border-color: #66b3ff;
-        box-shadow: 0 0 0 3px rgba(102, 179, 255, 0.1);
-    }
-    
-    .inline-search button {
-        background-color: #0066cc;
-    }
-    
-    .inline-search button:hover {
-        background-color: #3399ff;
-    }
-
-    details summary {
-        color: #94a3b8;
-    }
-
-    details summary:hover {
-        color: #66b3ff;
-    }
-
-    details summary:hover::before {
-        color: #66b3ff;
+        color: var(--static-white);
     }
 }
 
@@ -1769,21 +1529,27 @@ details summary:hover::before {
     .collapsibles-row {
         flex-direction: column;
     }
-    
+
     .exits-grid {
         grid-template-columns: 1fr;
     }
-    
-    .room-card, .exits-section, .inline-search-section {
+
+    .room-card,
+    .exits-section,
+    .inline-search-section {
         margin-left: 10px;
         margin-right: 10px;
     }
 
-    #nearby_rooms_div, #full_info_div {
+    #nearby_rooms_div,
+    #full_info_div {
         padding-left: 10px;
     }
 }
 
+/* ==========================================================================
+   ROOM PAGE: nearby rooms and copy-link toast
+   ========================================================================== */
 .nearby-rooms-content {
     font-size: 10px;
     padding: 5px;
@@ -1815,13 +1581,13 @@ details summary:hover::before {
     /* Reset the global [role="alert"] red border and margin; the live region itself is unchanged */
     margin: 0;
     border: 0;
-    background: #166534;
-    color: white;
+    background: var(--static-success);
+    color: var(--static-white);
     padding: 12px 20px;
     border-radius: 8px;
     font-size: 14px;
     z-index: 10000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--toast-shadow);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s, visibility 0.2s;
@@ -1832,13 +1598,16 @@ details summary:hover::before {
     visibility: visible;
 }
 
+/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
 @media (prefers-color-scheme: dark) {
     #copy_link_popup {
         border: 1px solid rgba(255, 255, 255, 0.25);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
     }
 }
 
+/* ==========================================================================
+   ROOM PAGE: inline tag search (autocomplete, selects)
+   ========================================================================== */
 .inline-search-container {
     max-width: 800px;
 }
@@ -1846,7 +1615,7 @@ details summary:hover::before {
 .inline-search-divider {
     margin: 5px 0;
     font-size: 13px;
-    color: #64748b;
+    color: var(--text-muted);
     font-weight: bold;
 }
 
@@ -1870,7 +1639,7 @@ details summary:hover::before {
 .inline-tag-input-wrapper input {
     width: 100%;
     padding: 8px 12px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 6px;
     font-size: 14px;
     box-sizing: border-box;
@@ -1883,7 +1652,7 @@ details summary:hover::before {
     left: 0;
     right: 0;
     z-index: 1000;
-    background: white;
+    background: var(--surface);
     border: 1px solid #cbd5e1;
     border-top: none;
     border-radius: 0 0 6px 6px;
@@ -1899,34 +1668,34 @@ details summary:hover::before {
     padding: 8px 12px;
     cursor: pointer;
     font-size: 13px;
-    color: #334155;
-    border-bottom: 1px solid #f1f5f9;
+    color: var(--text);
+    border-bottom: 1px solid var(--border-faint);
 }
 
 .inline-suggestion-item:hover,
 .inline-suggestion-item.selected {
-    background-color: #0066cc;
-    color: white;
+    background-color: var(--accent-selected);
+    color: var(--static-white);
 }
 
 .inline-tag-row select {
     padding: 8px 12px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 6px;
     font-size: 14px;
     min-width: 140px;
-    background: white;
+    background: var(--surface);
 }
 
 .inline-tag-row select:disabled {
-    background: #f8fafc;
-    color: #94a3b8;
+    background: var(--surface-inset);
+    color: var(--border-hover);
 }
 
 .inline-tag-row button {
     padding: 8px 16px;
-    background-color: #0066cc;
-    color: white;
+    background-color: var(--static-accent);
+    color: var(--static-white);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -1941,44 +1710,22 @@ details summary:hover::before {
 }
 
 .inline-tag-row button:not(:disabled):hover {
-    background-color: #0055aa;
+    background-color: var(--static-accent-hover);
 }
 
+/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
 @media (prefers-color-scheme: dark) {
-    .inline-search-divider {
-        color: #94a3b8;
-    }
-    
     .inline-tag-input-wrapper input {
         background-color: #1e293b;
-        border-color: #475569;
         color: #e2e8f0;
     }
-    
+
     #inlineTagSuggestions {
-        background: #1e293b;
         border-color: #475569;
     }
-    
-    .inline-suggestion-item {
-        color: #e2e8f0;
-        border-bottom-color: #334155;
-    }
-    
-    .inline-suggestion-item:hover,
-    .inline-suggestion-item.selected {
-        background-color: #3399ff;
-    }
-    
+
     .inline-tag-row select {
-        background-color: #1e293b;
-        border-color: #475569;
         color: #e2e8f0;
-    }
-    
-    .inline-tag-row select:disabled {
-        background: #0f172a;
-        color: #64748b;
     }
 }
 
@@ -1986,13 +1733,13 @@ details summary:hover::before {
     .inline-tag-row {
         flex-direction: column;
     }
-    
+
     .inline-tag-input-wrapper,
     .inline-tag-row select {
         width: 100%;
         min-width: unset;
     }
-    
+
     .inline-tag-row button {
         width: 100%;
     }
@@ -2003,8 +1750,8 @@ details summary:hover::before {
    ========================================================================== */
 @media (max-width: 768px) {
     /* Pin only the nav row. display: contents drops the wrapper's own box so the
-       nav sticks relative to the whole page instead of the (tall) header block.
-       The title, highlight controls and map now scroll normally. */
+     nav sticks relative to the whole page instead of the (tall) header block.
+     The title, highlight controls and map now scroll normally. */
     #sticky-header {
         display: contents;
     }
@@ -2137,15 +1884,6 @@ details summary:hover::before {
     }
 }
 
-/* Dark mode: keyboard focus ring for the icon buttons (the page background is dark) */
-@media (prefers-color-scheme: dark) {
-    #search_link:focus-visible,
-    #scroll_top_btn:focus-visible,
-    #copy_link_btn:focus-visible {
-        outline-color: #66b3ff;
-    }
-}
-
 /* Reduced motion for the room page. Kept at the end of the file so it wins over
    the transitions declared above. State changes (hover colors, open/closed arrows)
    still happen; only the movement and easing is removed. */
@@ -2173,7 +1911,7 @@ details summary:hover::before {
     }
 
     /* The current-room glow stops pulsing; the static glow stays visible.
-       This must sit after the .highlight_box rule that declares the animation. */
+     This must sit after the .highlight_box rule that declares the animation. */
     .highlight_box {
         animation: none;
     }
@@ -2192,7 +1930,7 @@ details summary:hover::before {
     list-style: none;
     font-size: 12px;
     line-height: 1.3;
-    color: #475569;
+    color: var(--text-secondary);
 }
 
 .map-legend-item {
@@ -2219,13 +1957,6 @@ details summary:hover::before {
     font-weight: 600;
 }
 
-@media (prefers-color-scheme: dark) {
-    .map-legend {
-        color: #cbd5e1;
-    }
-}
-
-
 /* ==========================================================================
    Search experience: results, map groups, notices, autocomplete details
    ========================================================================== */
@@ -2243,9 +1974,9 @@ details summary:hover::before {
 .search-notice {
     margin: 8px 0;
     padding: 10px 14px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-panel);
     border-radius: 6px;
-    background-color: #f8fafc;
+    background-color: var(--surface-panel);
 }
 
 .search-notice p {
@@ -2273,17 +2004,17 @@ details summary:hover::before {
     width: auto;
     margin: 0;
     padding: 6px 12px;
-    border: 1px solid #0066cc;
+    border: 1px solid var(--accent);
     border-radius: 4px;
     background-color: transparent;
-    color: #0066cc;
+    color: var(--accent);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
 }
 
 .search-action-button:hover {
-    background-color: #e6f3ff;
+    background-color: var(--surface-tint);
 }
 
 /* Map groups: name on the left, count on the right, proportional bar underneath */
@@ -2303,7 +2034,7 @@ details summary:hover::before {
     height: 4px;
     margin-top: 6px;
     border-radius: 2px;
-    background-color: #d9dee5;
+    background-color: var(--surface-meter);
     overflow: hidden;
 }
 
@@ -2312,11 +2043,11 @@ details summary:hover::before {
     width: calc(var(--share, 0) * 1%);
     height: 100%;
     border-radius: 2px;
-    background-color: #0066cc;
+    background-color: var(--accent);
 }
 
 .unmapped-button .map-group-bar-fill {
-    background-color: #b45309;
+    background-color: var(--unmapped-fill);
 }
 
 /* Result rows: one-line snippet, highlighted match, map chip */
@@ -2327,7 +2058,7 @@ details summary:hover::before {
     font-size: 13px;
     font-weight: normal;
     line-height: 1.4;
-    color: #475569;
+    color: var(--text-secondary);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -2335,18 +2066,18 @@ details summary:hover::before {
 mark.result-match {
     padding: 0 2px;
     border-radius: 2px;
-    background-color: #fde68a;
-    color: #1f2937;
+    background-color: var(--mark-bg);
+    color: var(--mark-text);
     font-weight: 600;
 }
 
 .result-chip {
     display: inline-block;
     padding: 1px 8px;
-    border: 1px solid #b9d3ee;
+    border: 1px solid var(--chip-info-border);
     border-radius: 999px;
-    background-color: #e6f0fa;
-    color: #0b4f8a;
+    background-color: var(--chip-info-bg);
+    color: var(--chip-info-text);
     font-size: 12px;
     font-weight: 600;
     line-height: 1.4;
@@ -2359,61 +2090,14 @@ mark.result-match {
 
 .suggestion-count {
     flex: none;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 12px;
     white-space: nowrap;
 }
 
 .suggestion-item:hover .suggestion-count,
 .suggestion-item.selected .suggestion-count {
-    color: #fff;
-}
-
-@media (prefers-color-scheme: dark) {
-    .search-notice {
-        border-color: #334155;
-        background-color: #1e293b;
-    }
-
-    .search-action-button {
-        border-color: #66b3ff;
-        color: #66b3ff;
-    }
-
-    .search-action-button:hover {
-        background-color: #1e293b;
-    }
-
-    .map-group-bar {
-        background-color: #444;
-    }
-
-    .map-group-bar-fill {
-        background-color: #66b3ff;
-    }
-
-    .unmapped-button .map-group-bar-fill {
-        background-color: #fbbf24;
-    }
-
-    .result-snippet {
-        color: #cbd5e1;
-    }
-
-    mark.result-match {
-        background-color: #854d0e;
-        color: #fef3c7;
-    }
-
-    .result-chip {
-        border-color: #2f5686;
-        background-color: #1e3a5f;
-        color: #bfdbfe;
-    }
-
-    .suggestion-count {
-        color: #94a3b8;
-    }
+    color: var(--static-white);
 }
 
 /* ==========================================================================
@@ -2446,10 +2130,10 @@ mark.result-match {
     min-height: 32px;
     margin: 0;
     padding: 2px 10px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 4px;
-    background-color: #fff;
-    color: #334155;
+    background-color: var(--surface);
+    color: var(--text);
     font-size: 13px;
     font-weight: 600;
     line-height: 1;
@@ -2458,19 +2142,19 @@ mark.result-match {
 }
 
 .map-zoom-button:hover {
-    border-color: #94a3b8;
-    background-color: #f1f5f9;
+    border-color: var(--border-hover);
+    background-color: var(--surface-chip);
 }
 
 .map-zoom-button[aria-pressed="true"] {
-    border-color: #0066cc;
-    background-color: #0066cc;
-    color: #fff;
+    border-color: var(--accent-fill);
+    background-color: var(--accent-fill);
+    color: var(--static-white);
 }
 
 .map-zoom-button[aria-pressed="true"]:hover {
-    border-color: #0055aa;
-    background-color: #0055aa;
+    border-color: var(--accent-fill-hover);
+    background-color: var(--accent-fill-hover);
 }
 
 .map-zoom-button[aria-disabled="true"] {
@@ -2479,7 +2163,7 @@ mark.result-match {
 }
 
 .map-zoom-button:focus-visible {
-    outline: 3px solid #0066cc;
+    outline: 3px solid var(--focus-ring);
     outline-offset: 1px;
     box-shadow: none;
 }
@@ -2491,7 +2175,7 @@ mark.result-match {
 
 .map-zoom-level {
     min-width: 7ch;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 12px;
     font-variant-numeric: tabular-nums;
     text-align: center;
@@ -2504,7 +2188,7 @@ mark.result-match {
     max-height: 80dvh;
     padding: 0;
     overflow: auto;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-panel);
     border-radius: 4px;
 }
 
@@ -2532,42 +2216,6 @@ mark.result-match {
     }
 }
 
-@media (prefers-color-scheme: dark) {
-    .map-zoom-button {
-        border-color: #475569;
-        background-color: #1e293b;
-        color: #e2e8f0;
-    }
-
-    .map-zoom-button:hover {
-        border-color: #64748b;
-        background-color: #334155;
-    }
-
-    .map-zoom-button[aria-pressed="true"] {
-        border-color: #1d6fd1;
-        background-color: #1d6fd1;
-        color: #fff;
-    }
-
-    .map-zoom-button[aria-pressed="true"]:hover {
-        border-color: #1a5fb4;
-        background-color: #1a5fb4;
-    }
-
-    .map-zoom-button:focus-visible {
-        outline-color: #66b3ff;
-    }
-
-    .map-zoom-level {
-        color: #cbd5e1;
-    }
-
-    #image_wrapper.map-zoomed {
-        border-color: #334155;
-    }
-}
-
 /* ==========================================================================
    Loading screen: download progress and error recovery
    ========================================================================== */
@@ -2576,7 +2224,7 @@ mark.result-match {
     height: 6px;
     margin-top: 14px;
     border-radius: 3px;
-    background-color: rgba(0, 0, 0, 0.15);
+    background-color: var(--bar-track);
     overflow: hidden;
 }
 
@@ -2585,7 +2233,7 @@ mark.result-match {
     width: calc(var(--progress, 0) * 1%);
     height: 100%;
     border-radius: 3px;
-    background-color: #0066cc;
+    background-color: var(--accent);
 }
 
 /* Indeterminate (download size unknown): a short bar sweeps across the track */
@@ -2606,7 +2254,7 @@ mark.result-match {
 
 .loading-detail {
     margin-top: 8px;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 13px;
     font-variant-numeric: tabular-nums;
 }
@@ -2614,7 +2262,7 @@ mark.result-match {
 .loading-note {
     max-width: 36ch;
     margin-top: 6px;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 12px;
     line-height: 1.4;
     text-align: center;
@@ -2636,14 +2284,14 @@ mark.result-match {
 
 .loading-error-message {
     margin: 0;
-    color: #b91c1c;
+    color: var(--danger-text-strong);
     font-size: 15px;
     font-weight: 600;
 }
 
 .loading-error-detail {
     margin: 0;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 12px;
     overflow-wrap: anywhere;
 }
@@ -2656,54 +2304,24 @@ mark.result-match {
     width: auto;
     margin: 8px 0 0;
     padding: 8px 24px;
-    border: 1px solid #0066cc;
+    border: 1px solid var(--accent-fill);
     border-radius: 6px;
-    background-color: #0066cc;
-    color: #fff;
+    background-color: var(--accent-fill);
+    color: var(--static-white);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
 }
 
 .loading-retry:hover {
-    border-color: #0055aa;
-    background-color: #0055aa;
+    border-color: var(--accent-fill-hover);
+    background-color: var(--accent-fill-hover);
 }
 
+/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
 @media (prefers-color-scheme: dark) {
-    .loading-bar {
-        background-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .loading-bar-fill {
-        background-color: #66b3ff;
-    }
-
-    .loading-detail,
-    .loading-note {
-        color: #cbd5e1;
-    }
-
-    .loading-error-message {
-        color: #fca5a5;
-    }
-
-    .loading-error-detail {
-        color: #94a3b8;
-    }
-
-    .loading-retry {
-        border-color: #1d6fd1;
-        background-color: #1d6fd1;
-    }
-
-    .loading-retry:hover {
-        border-color: #1a5fb4;
-        background-color: #1a5fb4;
-    }
-
     .loading-retry:focus-visible {
-        outline-color: #66b3ff;
+        outline-color: var(--focus-ring);
     }
 }
 
@@ -2713,18 +2331,12 @@ mark.result-match {
     .loading-bar-indeterminate .loading-bar-fill {
         width: 100%;
         animation: none;
-        background-image: repeating-linear-gradient(
-            -45deg,
-            rgba(255, 255, 255, 0.45) 0,
-            rgba(255, 255, 255, 0.45) 6px,
-            transparent 6px,
-            transparent 12px
-        );
+        background-image: repeating-linear-gradient( -45deg, rgba(255, 255, 255, 0.45) 0, rgba(255, 255, 255, 0.45) 6px, transparent 6px, transparent 12px );
     }
 }
 
 /* ==========================================================================
-   Phase 0: 404 / room-not-found layout, Dim map dark variant, map tooltip
+   Not-found layout and map hover tooltip
    ========================================================================== */
 .not-found-main {
     padding: 20px;
@@ -2749,10 +2361,10 @@ mark.result-match {
     z-index: 200;
     max-width: 260px;
     padding: 6px 10px;
-    border: 1px solid #0f172a;
+    border: 1px solid var(--tooltip-border);
     border-radius: 6px;
-    background-color: #1e293b;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    background-color: var(--tooltip-bg);
+    box-shadow: var(--tooltip-shadow);
     color: #f8fafc;
     font-size: 13px;
     line-height: 1.35;
@@ -2784,23 +2396,6 @@ mark.result-match {
 
     to {
         opacity: 1;
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    #opacity_toggle {
-        border-color: #475569;
-    }
-
-    #opacity_toggle:has(input:checked) {
-        border-color: #66b3ff;
-        background-color: rgba(102, 179, 255, 0.15);
-    }
-
-    .map-tooltip {
-        border-color: #94a3b8;
-        background-color: #0b1220;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
     }
 }
 

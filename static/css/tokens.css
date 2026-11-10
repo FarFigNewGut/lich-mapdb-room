@@ -1,0 +1,200 @@
+/* ==========================================================================
+   Design tokens
+   --------------------------------------------------------------------------
+   One :root block holds the light theme and ONE prefers-color-scheme: dark
+   block overrides the tokens that change. Components reference tokens with
+   var(--name) and never need their own dark-mode rule for colour.
+
+   Naming
+   - --static-*  same in light and dark (white text on a filled button, etc.)
+   - --hl-*      map highlight hues. Fixed in both themes because they are drawn
+                 over the map art, which stays light in dark mode.
+   - others      semantic roles (surface, border, text, accent, status, ...)
+
+   Load order: pico.min.css, tokens.css, room.css.
+   ========================================================================== */
+:root {
+    /* Accent (links, rings, selected states) */
+    --accent: #0066cc;
+    --accent-selected: #0066cc;
+    --accent-fill: #0066cc;
+    --accent-fill-hover: #0055aa;
+    --accent-fill-hover-lift: #0055aa;
+    --accent-text-hover: #0055aa;
+    --accent-tint: rgba(0, 102, 204, 0.1);
+    --focus-glow: rgba(0, 102, 204, 0.1);
+
+    /* Text */
+    --text: #334155;
+    --text-soft: #334155;
+    --text-secondary: #475569;
+    --text-secondary-dim: #475569;
+    --text-secondary-bright: #475569;
+    --text-intro: #475569;
+    --text-muted: #64748b;
+    --text-chip-hover: #1e293b;
+    --text-meta: #666666;
+    --text-meta-dim: #666666;
+    --text-disabled: #666666;
+    --select-option-text: #334155;
+
+    /* Surfaces */
+    --surface: #ffffff;
+    --surface-panel: #f8fafc;
+    --surface-inset: #f8fafc;
+    --surface-control: #f1f5f9;
+    --surface-chip: #f1f5f9;
+    --surface-code: #f1f5f9;
+    --surface-hover: #e2e8f0;
+    --surface-chip-hover: #e2e8f0;
+    --surface-tint: #e6f3ff;
+    --surface-tint-hover: #e6f3ff;
+    --surface-legacy: #f5f5f5;
+    --surface-link-hover: #f0f8ff;
+    --surface-disabled: #f9f9f9;
+    --surface-meter: #d9dee5;
+
+    /* Borders */
+    --border: #e2e8f0;
+    --border-control: #cbd5e1;
+    --border-panel: #cbd5e1;
+    --border-hover: #94a3b8;
+    --border-chip-hover: #cbd5e1;
+    --border-accent-hover: #cbd5e1;
+    --border-faint: #f1f5f9;
+    --border-faint-card: #f1f5f9;
+    --border-result: #e2e8f0;
+    --border-legacy: #cccccc;
+    --border-legacy-button: #cccccc;
+    --border-legacy-row: #eeeeee;
+
+    /* Status */
+    --danger-bg: #fef2f2;
+    --danger-border: #dc2626;
+    --danger-text: #dc2626;
+    --danger-text-strong: #b91c1c;
+    --warning-bg: #fffbeb;
+    --warning-border: #d97706;
+    --warning-text: #92400e;
+    --unmapped-text: #92400e;
+    --unmapped-fill: #b45309;
+
+    /* Components */
+    --banner-bg: #1a5f7a;
+    --banner-action: #ffffff;
+    --banner-text: #ffffff;
+    --spinner-head: #0066cc;
+    --spinner-track: rgba(0, 0, 0, 0.15);
+    --bar-track: rgba(0, 0, 0, 0.15);
+    --chip-info-bg: #e6f0fa;
+    --chip-info-text: #0b4f8a;
+    --chip-info-border: #b9d3ee;
+    --mark-bg: #fde68a;
+    --mark-text: #1f2937;
+    --tooltip-bg: #1e293b;
+    --tooltip-border: #0f172a;
+
+    /* Shadows */
+    --tooltip-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --toast-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    /* Focus ring (follows --accent in both themes) */
+    --focus-ring: var(--accent);
+
+    /* Static colours (identical in both themes) */
+    --static-white: #ffffff;
+    --static-black: #000000;
+    --static-accent: #0066cc;
+    --static-accent-hover: #0055aa;
+    --static-accent-pressed: #004d99;
+    --static-ink: #11191f;
+    --static-code-bg: #1e1e1e;
+    --static-success: #166534;
+    --static-yellow: #ffff00;
+    --static-grey-300: #cccccc;
+    --hl-current: #f59e0b;
+    --hl-tag: #0f766e;
+    --hl-location: #6d28d9;
+    --hl-halo: rgba(0, 0, 0, 0.45);
+    --hl-inner: rgba(255, 255, 255, 0.85);
+
+    /* Map highlight hues (fixed; see note above) */
+    --hl-current-rgb: 245, 158, 11;
+    --hl-tag-rgb: 20, 184, 166;
+    --hl-location-rgb: 124, 58, 237;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --accent: #66b3ff;
+        --accent-selected: #3399ff;
+        --accent-fill: #1d6fd1;
+        --accent-fill-hover: #1a5fb4;
+        --accent-fill-hover-lift: #3399ff;
+        --accent-text-hover: #99ccff;
+        --accent-tint: rgba(102, 179, 255, 0.15);
+        --focus-glow: rgba(102, 179, 255, 0.1);
+        --text: #e2e8f0;
+        --text-soft: #cbd5e1;
+        --text-secondary: #cbd5e1;
+        --text-secondary-dim: #94a3b8;
+        --text-secondary-bright: #e2e8f0;
+        --text-intro: #b4bfcc;
+        --text-muted: #94a3b8;
+        --text-chip-hover: #ffffff;
+        --text-meta: #bbbbbb;
+        --text-meta-dim: #aaaaaa;
+        --text-disabled: #94a3b8;
+        --select-option-text: hsl(205deg, 16%, 77%);
+        --surface: #1e293b;
+        --surface-panel: #1e293b;
+        --surface-inset: #0f172a;
+        --surface-control: #1e293b;
+        --surface-chip: #334155;
+        --surface-code: #0f172a;
+        --surface-hover: #334155;
+        --surface-chip-hover: #475569;
+        --surface-tint: #1e293b;
+        --surface-tint-hover: #333333;
+        --surface-legacy: #2a2a2a;
+        --surface-link-hover: #2a2a2a;
+        --surface-disabled: #0f172a;
+        --surface-meter: #444444;
+        --border: #334155;
+        --border-control: #475569;
+        --border-panel: #334155;
+        --border-hover: #64748b;
+        --border-chip-hover: #64748b;
+        --border-accent-hover: #66b3ff;
+        --border-faint: #334155;
+        --border-faint-card: #1e293b;
+        --border-result: #444444;
+        --border-legacy: #475569;
+        --border-legacy-button: #555555;
+        --border-legacy-row: #334155;
+        --danger-bg: #2d1b1b;
+        --danger-border: #ef4444;
+        --danger-text: #fecaca;
+        --danger-text-strong: #fca5a5;
+        --warning-bg: #2d2416;
+        --warning-border: #f59e0b;
+        --warning-text: #fcd34d;
+        --unmapped-text: #fbbf24;
+        --unmapped-fill: #fbbf24;
+        --banner-bg: #0f3b4d;
+        --banner-action: #e2e8f0;
+        --banner-text: #f1f5f9;
+        --spinner-head: #ffffff;
+        --spinner-track: rgba(255, 255, 255, 0.3);
+        --bar-track: rgba(255, 255, 255, 0.2);
+        --chip-info-bg: #1e3a5f;
+        --chip-info-text: #bfdbfe;
+        --chip-info-border: #2f5686;
+        --mark-bg: #854d0e;
+        --mark-text: #fef3c7;
+        --tooltip-bg: #0b1220;
+        --tooltip-border: #94a3b8;
+        --tooltip-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+        --toast-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+}
