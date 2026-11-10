@@ -175,17 +175,55 @@ async function main() {
             navigate('/search', true);
         }
         
-        setTimeout(async () => {
-            const updateCheck = await checkForUpdates();
-            if (updateCheck.hasUpdate) {
-                showUpdateBanner();
-            }
-        }, 5000);
+        scheduleUpdateChecks();
         
     } catch (error) {
         console.error('Failed to initialize:', error);
         showLoadingError(error);
     }
+}
+
+// How often to re-check for new map data while a tab stays open, and the
+// minimum gap between checks triggered by the tab regaining focus.
+const UPDATE_CHECK_INTERVAL_MS = 3600000;
+const VISIBILITY_CHECK_THROTTLE_MS = 300000;
+
+let lastUpdateCheckAt = 0;
+
+// Players leave tabs open for days, so a single check at load misses most
+// updates. Re-check on an hourly timer and whenever the tab regains focus
+// (throttled), and stop once an update has been found.
+async function runUpdateCheck() {
+    if (document.getElementById('update-banner')) {
+        return true;
+    }
+    lastUpdateCheckAt = Date.now();
+    const updateCheck = await checkForUpdates();
+    if (updateCheck.hasUpdate) {
+        showUpdateBanner();
+        return true;
+    }
+    return false;
+}
+
+function scheduleUpdateChecks() {
+    const intervalId = setInterval(async () => {
+        if (await runUpdateCheck()) {
+            clearInterval(intervalId);
+        }
+    }, UPDATE_CHECK_INTERVAL_MS);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') {
+            return;
+        }
+        if (Date.now() - lastUpdateCheckAt < VISIBILITY_CHECK_THROTTLE_MS) {
+            return;
+        }
+        runUpdateCheck();
+    });
+
+    setTimeout(runUpdateCheck, 5000);
 }
 
 function showUpdateBanner() {
