@@ -102,15 +102,23 @@ function showUpdateBanner() {
     
     const banner = document.createElement('div');
     banner.id = 'update-banner';
+    banner.className = 'update-banner';
     banner.setAttribute('role', 'alert');
-    banner.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: #1a5f7a; color: white; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; z-index: 10000; font-size: 14px;';
     banner.innerHTML = `
         <span>Room data has been updated. Refresh to see the latest changes.</span>
-        <div style="display: flex; gap: 10px;">
-            <button onclick="location.reload()" style="padding: 5px 12px; cursor: pointer; background: white; color: #1a5f7a; border: none; border-radius: 3px; font-weight: bold;">Refresh</button>
-            <button onclick="this.parentElement.parentElement.remove()" style="padding: 5px 12px; cursor: pointer; background: transparent; color: white; border: 1px solid white; border-radius: 3px;">Dismiss</button>
+        <div class="update-banner-actions">
+            <button type="button" class="update-banner-refresh">Refresh</button>
+            <button type="button" class="update-banner-dismiss">Dismiss</button>
         </div>
     `;
+    
+    banner.querySelector('.update-banner-refresh').addEventListener('click', () => {
+        location.reload();
+    });
+    banner.querySelector('.update-banner-dismiss').addEventListener('click', () => {
+        banner.remove();
+    });
+    
     document.body.prepend(banner);
 }
 

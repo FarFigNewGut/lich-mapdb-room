@@ -34,9 +34,9 @@ function buildSearchHTML(queryParams) {
             </div>
         </nav>
         
-        <main id="main-content" role="main" style="padding: 15px; margin-top: 0;">
-            <h1 style="margin-top: 0;">Lich Map Room Database</h1>
-            <p style="margin-bottom: 15px; color: #666; font-size: 14px;">
+        <main id="main-content" role="main" class="search-main">
+            <h1>Lich Map Room Database</h1>
+            <p class="search-intro">
                 Search by room ID, UID (u12345), tag name, or text. 
                 Use advanced search for map-specific filtering.
             </p>
@@ -45,7 +45,7 @@ function buildSearchHTML(queryParams) {
             
             <div id="search-results"></div>
             
-            <footer id="updated_at" role="contentinfo" style="margin-top: 20px;">
+            <footer id="updated_at" role="contentinfo" class="search-footer">
                 <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
             </footer>
         </main>
@@ -68,54 +68,52 @@ function buildSearchForms(queryParams) {
     const searchValue = queryParams.q || '';
     
     return `
-        <div style="max-width: 600px; padding: 10px; box-sizing: border-box;">
-            <form id="basicSearchForm" style="margin-bottom: 8px;" role="search" aria-label="Basic room search">
-                <label for="search" style="font-size: 14px; margin-bottom: 3px; display: block; font-weight: bold;">
+        <div class="search-forms">
+            <form id="basicSearchForm" class="search-basic-form" role="search" aria-label="Basic room search">
+                <label for="search" class="search-label">
                     Search by: Room ID, UID (u12345), tag name, or text in room titles/descriptions
                 </label>
                 <input type="text" id="search" name="search" 
-                       style="width: 100%; padding: 6px; margin-bottom: 4px; font-size: 14px; box-sizing: border-box;"
+                       class="search-input search-input-spaced"
                        placeholder="Room Lich ID, Simu ID, or any search criteria"
                        value="${escapeHtml(searchValue)}"
                        aria-describedby="search-help">
                 <div id="search-help" class="sr-only">Enter a room ID number, UID starting with u, tag name, or any text to search in room titles and descriptions</div>
-                <button type="submit" style="padding: 6px 12px; font-size: 14px;" aria-label="Search rooms">Search</button>
+                <button type="submit" class="search-button" aria-label="Search rooms">Search</button>
             </form>
 
-            <hr style="margin: 8px 0;">
+            <hr class="search-divider">
 
             <form id="tagSearchForm" role="search" aria-label="Advanced tag and map search">
-                <fieldset style="border: none; padding: 0; margin: 0;">
-                    <legend style="font-size: 14px; margin-bottom: 3px; display: block; font-weight: bold;">Advanced Search by Tag and Map:</legend>
+                <fieldset class="search-fieldset">
+                    <legend class="search-label">Advanced Search by Tag and Map:</legend>
 
-                    <div style="margin-bottom: 4px; padding-left: 0; position: relative;">
+                    <div class="search-field search-field-tag">
                         <label for="tagInput" class="sr-only">Tag name</label>
-                        <input type="text" id="tagInput" placeholder="Start typing a tag..." autocomplete="off"
-                               style="width: 100%; padding: 6px; font-size: 14px; box-sizing: border-box;"
+                        <input type="text" id="tagInput" class="search-input" placeholder="Start typing a tag..." autocomplete="off"
                                aria-describedby="tag-help" aria-expanded="false" aria-autocomplete="both" role="combobox" aria-controls="tagSuggestions">
                         <div id="tag-help" class="sr-only">Start typing to see available tags. Use arrow keys to navigate suggestions, Enter to select.</div>
-                        <ul id="tagSuggestions" tabindex="0" 
-                            style="display: none; border: 1px solid #ccc; background: white; max-height: 150px; overflow-y: auto; position: absolute; top: calc(100% - 2px); left: 0; right: 0; z-index: 1000; font-size: 14px; margin-top: 0; list-style: none; padding: 0; margin: 0;" 
+                        <ul id="tagSuggestions" class="tag-suggestions" tabindex="0" 
                             role="listbox" aria-label="Tag suggestions"></ul>
                     </div>
 
-                    <div style="margin-bottom: 4px; padding-left: 0;">
+                    <div class="search-field">
                         <label for="imageSelect" class="sr-only">Map image</label>
-                        <select id="imageSelect" disabled style="width: 100%; padding: 6px; font-size: 14px; box-sizing: border-box;" aria-describedby="image-help">
+                        <select id="imageSelect" class="search-select" disabled aria-describedby="image-help">
                             <option value="">Select a map...</option>
                         </select>
                         <div id="image-help" class="sr-only">Choose a map image that contains the selected tag</div>
                     </div>
 
-                    <div style="margin-bottom: 4px; padding-left: 0;">
+                    <div class="search-field">
                         <label for="locationSelect" class="sr-only">Location within map</label>
-                        <select id="locationSelect" disabled style="width: 100%; padding: 6px; font-size: 14px; box-sizing: border-box;" aria-describedby="location-help">
+                        <select id="locationSelect" class="search-select" disabled aria-describedby="location-help">
                             <option value="">Select a location (optional)...</option>
                         </select>
                         <div id="location-help" class="sr-only">Optionally narrow down to a specific location within the selected map</div>
                     </div>
 
-                    <button type="submit" id="tagSearchButton" disabled style="padding: 6px 12px; font-size: 14px;" aria-label="Go to selected map location">Go to Map</button>
+                    <button type="submit" id="tagSearchButton" class="search-button" disabled aria-label="Go to selected map location">Go to Map</button>
                 </fieldset>
             </form>
         </div>
@@ -180,7 +178,7 @@ function initTagAutocomplete() {
     });
     
     tagInput.addEventListener('keydown', function(e) {
-        const isVisible = tagSuggestions.style.display === 'block';
+        const isVisible = tagSuggestions.classList.contains('visible');
         if (!isVisible) return;
         
         const items = tagSuggestions.querySelectorAll('.suggestion-item');
@@ -224,11 +222,6 @@ function showSuggestions(tags, container, input) {
     tags.slice(0, 50).forEach((tag, index) => {
         const li = document.createElement('li');
         li.textContent = tag;
-        li.style.padding = '6px 8px';
-        li.style.cursor = 'pointer';
-        li.style.borderBottom = '1px solid #eee';
-        li.style.color = '#333';
-        li.style.backgroundColor = 'white';
         li.className = 'suggestion-item';
         li.setAttribute('role', 'option');
         li.setAttribute('id', `tag-option-${index}`);
@@ -242,13 +235,13 @@ function showSuggestions(tags, container, input) {
         container.appendChild(li);
     });
     
-    container.style.display = 'block';
+    container.classList.add('visible');
     input.setAttribute('aria-expanded', 'true');
     announceToScreenReader(`${tags.length} suggestions available`);
 }
 
 function hideSuggestions(container, input) {
-    container.style.display = 'none';
+    container.classList.remove('visible');
     input.setAttribute('aria-expanded', 'false');
     input.removeAttribute('aria-activedescendant');
 }
@@ -256,13 +249,11 @@ function hideSuggestions(container, input) {
 function updateHighlight(items, selectedIndex, input) {
     items.forEach((item, index) => {
         if (index === selectedIndex) {
-            item.style.backgroundColor = '#0066cc';
-            item.style.color = 'white';
+            item.classList.add('selected');
             item.setAttribute('aria-selected', 'true');
             input.setAttribute('aria-activedescendant', item.id);
         } else {
-            item.style.backgroundColor = 'white';
-            item.style.color = '#333';
+            item.classList.remove('selected');
             item.setAttribute('aria-selected', 'false');
         }
     });
@@ -540,7 +531,7 @@ function renderMapGroups(results, searchTerm, container) {
         <section aria-labelledby="map-groups-heading">
             <h3 id="map-groups-heading">Too many results (${Object.keys(results).length} found) - Select a map to refine search</h3>
             <p>Your search for "<strong>${escapeHtml(searchTerm)}</strong>" returned too many results to display individually. Please select a map below to see results from that specific area:</p>
-            <div class="map-groups-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+            <div class="map-groups-container">
     `;
     
     for (const [mapImage, mapData] of sortedGroups) {
@@ -548,10 +539,9 @@ function renderMapGroups(results, searchTerm, container) {
             <button type="button" class="map-group-button" 
                     data-map="${escapeHtml(mapImage)}" 
                     data-search="${escapeHtml(searchTerm)}"
-                    aria-label="Search for ${escapeHtml(searchTerm)} on map ${escapeHtml(mapData.display_name)}, ${mapData.count} results"
-                    style="padding: 8px 12px; cursor: pointer; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px;">
+                    aria-label="Search for ${escapeHtml(searchTerm)} on map ${escapeHtml(mapData.display_name)}, ${mapData.count} results">
                 <span class="map-name">${escapeHtml(mapData.display_name)}</span>
-                <span class="map-count" style="color: #666;">(${mapData.count})</span>
+                <span class="map-count">(${mapData.count})</span>
             </button>
         `;
     }
@@ -561,10 +551,9 @@ function renderMapGroups(results, searchTerm, container) {
             <button type="button" class="map-group-button unmapped-button" 
                     data-map="UNMAPPED" 
                     data-search="${escapeHtml(searchTerm)}"
-                    aria-label="Search for ${escapeHtml(searchTerm)} in unmapped rooms, ${unmappedCount} results"
-                    style="padding: 8px 12px; cursor: pointer; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px;">
+                    aria-label="Search for ${escapeHtml(searchTerm)} in unmapped rooms, ${unmappedCount} results">
                 <span class="map-name">Unmapped Rooms</span>
-                <span class="map-count" style="color: #666;">(${unmappedCount})</span>
+                <span class="map-count">(${unmappedCount})</span>
             </button>
         `;
     }
@@ -618,7 +607,7 @@ function renderResults(results, searchTerm, container, mapFilter) {
     html += `
         <section aria-labelledby="search-results-heading">
             <h3 id="search-results-heading">Search Results (${displayResults.length}${overflow ? ' of ' + resultIds.length : ''} found)</h3>
-            <ul role="list" class="search-results-list" style="list-style: none; padding: 0;">
+            <ul role="list" class="search-results-list">
     `;
     
     for (const rid of displayResults) {
@@ -629,11 +618,11 @@ function renderResults(results, searchTerm, container, mapFilter) {
         const mapName = room.image ? room.image.replace(/_/g, ' ').replace(/\.(png|jpg|gif)$/i, '') : '';
         
         html += `
-            <li class="search-result-item" style="margin-bottom: 8px; padding: 8px; border: 1px solid #eee; border-radius: 4px;">
-                <a href="#/room/${rid}" class="result-link" style="text-decoration: none; color: inherit; display: block;"
+            <li class="search-result-item">
+                <a href="#/room/${rid}" class="result-link"
                    aria-label="Navigate to ${escapeHtml(title)}, room ID ${rid}${uid !== 'N/A' ? ', UID u' + uid : ''}${location ? ', in ' + location : ''}${mapName ? ', on map ' + mapName : ''}">
-                    <span class="result-title" style="font-weight: bold; color: #0066cc;">${escapeHtml(title)}</span>
-                    <span class="result-meta" style="display: block; font-size: 12px; color: #666;">
+                    <span class="result-title">${escapeHtml(title)}</span>
+                    <span class="result-meta">
                         ID: ${rid} | UID: u${uid}${location ? ' | ' + escapeHtml(location) : ''}${mapName ? ' | ' + escapeHtml(mapName) : ''}
                     </span>
                 </a>
