@@ -11,7 +11,13 @@
     <link rel="icon" type="image/png" sizes="32x32" href="static/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="static/icons/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="static/icons/apple-touch-icon.png">
-    <meta name="theme-color" content="#11191f">
+    <meta name="theme-color" content="#f6f1e7" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f1420" media="(prefers-color-scheme: dark)">
+    
+    <!-- Fonts: the two faces used above the fold. The rest load on demand from tokens.css.
+         crossorigin is required for font preloads, even from the same origin. -->
+    <link rel="preload" href="static/fonts/fraunces-600.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="static/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
     
     <!-- Styles (existing) -->
     <link rel="stylesheet" href="static/css/pico.min.css">

@@ -42,18 +42,18 @@
 }
 
 .room-info {
-    font-size: 18px;
-    color: inherit;
     margin: 0 2px 0 0;
     padding-bottom: 3px;
-    font-weight: bold;
-    text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 400;
 }
 
 /* Enhanced focus indicators.
    :focus-visible shows the ring for keyboard users (and for text fields, where browsers
    always treat focus as visible) but not after a mouse click on a button or link.
-   #0066cc is 5.6:1 on white; in dark mode --focus-ring becomes a lighter blue. */
+   The ring is the accent indigo (8:1 on the page); in dark mode --focus-ring becomes a lighter indigo. */
 *:focus-visible {
     outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
@@ -79,16 +79,19 @@ button:focus:not(:focus-visible),
     font-style: italic;
 }
 
-/* Fix heading styles to be lighter and restore original hierarchy */
+/* Headings: Fraunces for titles and section headings (600 is the heavier face
+   that ships; 400 is available for lighter uses). No text shadow. */
 h1 {
     padding: 0;
     margin: 0;
-    text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
-    font-weight: bold;
+    font-family: var(--font-display);
+    font-weight: 600;
 }
 
 h2 {
+    font-family: var(--font-display);
     font-size: 16px;
+    font-weight: 600;
     margin: 5px 0 5px 0;
     color: inherit;
 }
@@ -96,6 +99,8 @@ h2 {
 h3 {
     padding: 0;
     margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
     color: inherit;
 }
 
@@ -104,7 +109,7 @@ h3 {
     margin-top: 5px;
     margin-bottom: 5px;
     margin-left: 25px;
-    border-bottom: 1px solid var(--static-grey-300);
+    border-bottom: 1px solid var(--border-control);
     padding-bottom: 5px;
     color: inherit;
 }
@@ -112,7 +117,7 @@ h3 {
 #nearby-rooms-heading + p {
     margin-bottom: 5px;
     margin-left: 25px;
-    color: #555;
+    color: var(--text-secondary);
 }
 
 ul[role="list"] {
@@ -194,9 +199,10 @@ footer {
    ROOM PAGE: info text, tables, status messages
    ========================================================================== */
 /* Better contrast for room information */
+.room-ids,
 .room-location {
     font-size: 14px;
-    color: #666;
+    color: var(--text-meta);
     margin: 5px 0 0 0;
     font-weight: bold;
 }
@@ -329,7 +335,8 @@ article#full_info_article {
 
 #full_info_code {
     white-space: pre-wrap;
-    font-size: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
 }
 
 #updated_at {
@@ -368,8 +375,7 @@ article#full_info_article {
 
 #title_row h1 {
     margin: 0;
-    text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
-    font-weight: bold;
+    font-weight: 600;
 }
 
 #tag_selector {
@@ -402,7 +408,7 @@ article#full_info_article {
 
 #tag_selector #meta_tags_toggle label {
     margin-right: 0;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: normal;
 }
 
@@ -410,8 +416,8 @@ article#full_info_article {
 #location_dropdown {
     padding: 3px;
     margin-bottom: 0px;
-    font-size: 12px;
-    border: 1px solid var(--static-grey-300);
+    font-size: 13px;
+    border: 1px solid var(--border-control);
     border-radius: 3px;
     min-width: 120px;
     max-width: 200px;
@@ -462,9 +468,9 @@ article#full_info_article {
 
 #map_dropdown,
 #adjacent_map_dropdown {
-    padding: 2px 4px;
-    font-size: 11px !important;
-    border: 1px solid var(--static-grey-300);
+    padding: 3px 6px;
+    font-size: 13px !important;
+    border: 1px solid var(--border-control);
     border-radius: 3px;
     max-width: 200px;
     line-height: 1.2;
@@ -516,7 +522,7 @@ article#full_info_article {
 #map_dropdown optgroup,
 #adjacent_map_dropdown optgroup {
     font-weight: bold;
-    font-size: 12px !important;
+    font-size: 13px !important;
     background-color: var(--surface-tint);
     color: var(--accent);
     padding: 2px 4px;
@@ -525,7 +531,7 @@ article#full_info_article {
 #map_dropdown option,
 #adjacent_map_dropdown option {
     font-weight: normal;
-    font-size: 11px !important;
+    font-size: 13px !important;
     color: var(--select-option-text) !important;
 }
 
@@ -709,18 +715,6 @@ article#full_info_article {
     width: 30px;
     height: 20px;
     position: relative;
-}
-
-/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
-@media (prefers-color-scheme: dark) {
-    .room-ids,
-    .room-location {
-        color: var(--static-grey-300);
-    }
-
-    th[scope="row"] {
-        color: var(--static-white);
-    }
 }
 
 /* ==========================================================================
@@ -1213,11 +1207,12 @@ ul.search-results-list a.result-link:focus-visible {
 }
 
 .exits-heading {
+    font-family: var(--font-family);
     font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    color: var(--text-muted);
+    color: var(--copper);
     margin-bottom: 20px;
     border-bottom: 1px solid var(--border);
     padding-bottom: 8px;
@@ -1293,10 +1288,10 @@ ul.search-results-list a.result-link:focus-visible {
 .exit-command {
     min-width: 0;
     overflow-wrap: anywhere;
-    font-weight: 600;
+    font-weight: 400;
     color: var(--accent);
-    font-family: monospace;
-    font-size: 11px;
+    font-family: var(--font-mono);
+    font-size: 13px;
 }
 
 .exit-item-compact {
@@ -1304,26 +1299,26 @@ ul.search-results-list a.result-link:focus-visible {
 }
 
 .exit-item-compact .exit-command {
-    font-size: 11px;
+    font-size: 13px;
 }
 
 .exit-item-compact .exit-id {
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .exit-arrow {
     flex: none;
     margin: 0 4px;
-    color: #94a3b8;
+    color: var(--text-faint);
     font-weight: 300;
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .exit-id {
     flex: none;
     color: var(--text-muted);
-    font-family: monospace;
-    font-size: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
     background: var(--surface-code);
     padding: 1px 4px;
     border-radius: 3px;
@@ -1338,7 +1333,7 @@ ul.search-results-list a.result-link:focus-visible {
 .exits-tab {
     display: inline-block;
     padding: 4px 10px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-right: none;
     background: var(--surface-control);
     color: var(--text-muted);
@@ -1400,7 +1395,7 @@ ul.search-results-list a.result-link:focus-visible {
     border: 1px solid var(--border-control);
     border-radius: 3px;
     background: var(--surface-control);
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     color: var(--text-secondary-bright);
     cursor: pointer;
@@ -1415,7 +1410,7 @@ ul.search-results-list a.result-link:focus-visible {
     white-space: nowrap;
     vertical-align: bottom;
     font-family: var(--font-family);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .stringproc-subtab:hover {
@@ -1451,9 +1446,10 @@ ul.search-results-list a.result-link:focus-visible {
 .stringproc-code-container code,
 .stringproc-code-container code[class*="language-"],
 .stringproc-code-container pre[class*="language-"] code {
-    font-size: 10px !important;
+    font-family: var(--font-mono);
+    font-size: 12px !important;
     font-weight: 400 !important;
-    line-height: 1.3 !important;
+    line-height: 1.4 !important;
     background: transparent !important;
 }
 
@@ -1498,7 +1494,7 @@ details summary::before {
     margin-right: 8px;
     font-size: 0.8em;
     transition: transform 0.2s;
-    color: #94a3b8;
+    color: var(--text-faint);
 }
 
 details[open] summary::before {
@@ -1569,16 +1565,7 @@ details summary:hover::before {
 @media (prefers-color-scheme: dark) {
     .exit-item:hover,
     .exit-item:focus-visible {
-        background-color: #334155;
-    }
-
-    .exits-tab {
-        border-color: #475569;
-    }
-
-    .inline-search input {
-        background-color: #1e293b;
-        color: var(--static-white);
+        background-color: var(--surface-hover);
     }
 }
 
@@ -1608,7 +1595,7 @@ details summary:hover::before {
    ROOM PAGE: nearby rooms and copy-link toast
    ========================================================================== */
 .nearby-rooms-content {
-    font-size: 10px;
+    font-size: 13px;
     padding: 5px;
 }
 
@@ -1623,11 +1610,11 @@ details summary:hover::before {
 }
 
 .nearby-rooms-list a {
-    font-size: 10px;
+    font-size: 13px;
 }
 
 .nearby-location {
-    font-size: 10px;
+    font-size: 12px;
 }
 
 #copy_link_popup {
@@ -1710,7 +1697,7 @@ details summary:hover::before {
     right: 0;
     z-index: 1000;
     background: var(--surface);
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-top: none;
     border-radius: 0 0 6px 6px;
     max-height: 180px;
@@ -1762,28 +1749,12 @@ details summary:hover::before {
 }
 
 .inline-tag-row button:disabled {
-    background-color: #94a3b8;
+    background-color: var(--text-faint);
     cursor: not-allowed;
 }
 
 .inline-tag-row button:not(:disabled):hover {
     background-color: var(--static-accent-hover);
-}
-
-/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
-@media (prefers-color-scheme: dark) {
-    .inline-tag-input-wrapper input {
-        background-color: #1e293b;
-        color: #e2e8f0;
-    }
-
-    #inlineTagSuggestions {
-        border-color: #475569;
-    }
-
-    .inline-tag-row select {
-        color: #e2e8f0;
-    }
 }
 
 @media (max-width: 768px) {
@@ -1868,7 +1839,7 @@ details summary:hover::before {
     }
 
     .room-info {
-        font-size: 16px;
+        font-size: 14px;
         overflow-wrap: anywhere;
     }
 
@@ -2422,7 +2393,7 @@ mark.result-match {
     border-radius: 6px;
     background-color: var(--tooltip-bg);
     box-shadow: var(--tooltip-shadow);
-    color: #f8fafc;
+    color: var(--tooltip-text);
     font-size: 13px;
     line-height: 1.35;
     pointer-events: none;
@@ -2441,8 +2412,8 @@ mark.result-match {
 
 .map-tooltip-meta {
     display: block;
-    color: #cbd5e1;
-    font-family: monospace;
+    color: var(--tooltip-muted);
+    font-family: var(--font-mono);
     font-size: 12px;
 }
 
@@ -2458,6 +2429,70 @@ mark.result-match {
 
 @media (prefers-reduced-motion: reduce) {
     .map-tooltip {
+        animation: none;
+    }
+}
+
+/* ==========================================================================
+   ATLAS TYPE AND MOTION
+   Room IDs in search results use the mono face; the room page fades up once
+   on render (CSS only, no JS). Each render builds new elements, so the
+   animation plays every time a room opens.
+   ========================================================================== */
+.result-id {
+    font-family: var(--font-mono);
+}
+
+@keyframes atlas-rise {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* fill-mode "backwards" holds the first frame during the delay but lets the
+   hover lift on .exit-item work again once the animation has finished. */
+.room-card {
+    animation: atlas-rise 0.4s ease-out backwards;
+}
+
+.exits-section {
+    animation: atlas-rise 0.4s ease-out 0.08s backwards;
+}
+
+.tag-badge {
+    animation: atlas-rise 0.35s ease-out 0.12s backwards;
+}
+
+.exit-item {
+    animation: atlas-rise 0.35s ease-out 0.16s backwards;
+}
+
+.tag-badge:nth-child(2) { animation-delay: 0.14s; }
+.tag-badge:nth-child(3) { animation-delay: 0.16s; }
+.tag-badge:nth-child(4) { animation-delay: 0.18s; }
+.tag-badge:nth-child(5) { animation-delay: 0.2s; }
+.tag-badge:nth-child(n + 6) { animation-delay: 0.22s; }
+
+.exit-item:nth-child(2) { animation-delay: 0.19s; }
+.exit-item:nth-child(3) { animation-delay: 0.22s; }
+.exit-item:nth-child(4) { animation-delay: 0.25s; }
+.exit-item:nth-child(5) { animation-delay: 0.28s; }
+.exit-item:nth-child(6) { animation-delay: 0.31s; }
+.exit-item:nth-child(7) { animation-delay: 0.34s; }
+.exit-item:nth-child(n + 8) { animation-delay: 0.37s; }
+
+/* Reduced motion: everything is simply there, with no fade or slide */
+@media (prefers-reduced-motion: reduce) {
+    .room-card,
+    .exits-section,
+    .tag-badge,
+    .exit-item {
         animation: none;
     }
 }
