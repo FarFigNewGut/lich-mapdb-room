@@ -42,18 +42,37 @@
     text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
 }
 
-/* Enhanced focus indicators */
-*:focus {
+/* Enhanced focus indicators.
+   :focus-visible shows the ring for keyboard users (and for text fields, where browsers
+   always treat focus as visible) but not after a mouse click on a button or link.
+   #0066cc is 5.6:1 on white; the dark theme uses a lighter blue (see the dark block below). */
+*:focus-visible {
     outline: 2px solid #0066cc;
     outline-offset: 2px;
 }
 
-button:focus,
-input:focus,
-select:focus,
-a:focus {
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
     outline: 3px solid #0066cc;
     outline-offset: 2px;
+}
+
+/* Pico also paints a glow on :focus; keep it for keyboard use only so a mouse click on a button leaves no ring */
+button:focus:not(:focus-visible),
+[role="button"]:focus:not(:focus-visible) {
+    box-shadow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    *:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    a:focus-visible {
+        outline-color: #66b3ff;
+    }
 }
 
 .room-tags {
@@ -114,7 +133,7 @@ ul[role="list"] a {
 }
 
 ul[role="list"] a:hover,
-ul[role="list"] a:focus {
+ul[role="list"] a:focus-visible {
     text-decoration: underline;
 }
 
@@ -151,15 +170,15 @@ footer {
 
 /* High contrast and visual accessibility improvements */
 @media (prefers-contrast: high) {
-    *:focus {
+    *:focus-visible {
         outline: 4px solid #000;
         outline-offset: 2px;
     }
 
-    button:focus,
-    input:focus,
-    select:focus,
-    a:focus {
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    a:focus-visible {
         outline: 4px solid #000;
         outline-offset: 2px;
         background-color: #ffff00;
@@ -228,12 +247,17 @@ select[disabled] {
     padding: 0;
     position: absolute;
     z-index: 9;
+    pointer-events: none;
 }
 
 #mapimage {
     max-width: 100%;
     z-index: 1;
     position: relative;
+}
+
+/* Only rooms other than the current one are clickable; JS adds this class while the pointer is over one */
+#mapimage.map-room-hover {
     cursor: pointer;
 }
 
@@ -244,16 +268,6 @@ select[disabled] {
     }
 }
 
-/* Only fade on hover where hover really exists, so a tap on a phone doesn't leave the map faded */
-@media (hover: hover) {
-    #mapimage:hover {
-        -webkit-filter: opacity(20%);
-        -moz-filter: opacity(20%);
-        -o-filter: opacity(20%);
-        -ms-filter: opacity(20%);
-        filter: opacity(20%);
-    }
-}
 #image_wrapper {
     padding: 1px 25px 5px 25px;
     position: relative;
@@ -398,24 +412,35 @@ article#full_info_article {
     vertical-align: baseline;
 }
 
+/* "Dim map": an explicit pill-shaped switch that fades the whole map image */
 #opacity_toggle {
     display: flex;
     align-items: center;
-    gap: 2px;
-    margin-top: 20px;
-    flex-shrink: 0;
+    gap: 6px;
+    margin-top: 16px;
     margin-left: 0;
+    padding: 4px 12px 4px 8px;
+    flex-shrink: 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
 }
 
 #opacity_toggle input {
     margin: 0;
-    transform: scale(0.7);
+    cursor: pointer;
 }
 
 #opacity_toggle label {
-    font-size: 11px;
-    font-weight: normal;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
     line-height: 1;
+    cursor: pointer;
+}
+
+#opacity_toggle:has(input:checked) {
+    border-color: #0066cc;
+    background-color: rgba(0, 102, 204, 0.1);
 }
 
 #map_navigation {
@@ -664,8 +689,11 @@ article#full_info_article {
 }
 
 #help_close:hover,
-#help_close:focus {
+#help_close:focus-visible {
     color: white;
+}
+
+#help_close:focus-visible {
     outline: 2px solid #fff;
 }
 
@@ -857,9 +885,12 @@ ul.search-results-list a.result-link {
 }
 
 ul.search-results-list a.result-link:hover,
-ul.search-results-list a.result-link:focus {
+ul.search-results-list a.result-link:focus-visible {
     background-color: #f0f8ff;
     text-decoration: none;
+}
+
+ul.search-results-list a.result-link:focus-visible {
     outline: 2px solid #0066cc;
     outline-offset: 1px;
 }
@@ -911,9 +942,12 @@ ul.search-results-list a.result-link:focus {
 }
 
 .map-group-button:hover,
-.map-group-button:focus {
+.map-group-button:focus-visible {
     background-color: #e6f3ff;
     border-color: #0066cc;
+}
+
+.map-group-button:focus-visible {
     outline: 2px solid #0066cc;
     outline-offset: 1px;
 }
@@ -1023,7 +1057,7 @@ ul.search-results-list a.result-link:focus {
     border: 1px solid #fff;
 }
 
-.update-banner button:focus {
+.update-banner button:focus-visible {
     outline-color: #fff;
 }
 
@@ -1055,7 +1089,7 @@ ul.search-results-list a.result-link:focus {
     }
 
     ul.search-results-list a.result-link:hover,
-    ul.search-results-list a.result-link:focus {
+    ul.search-results-list a.result-link:focus-visible {
         background-color: #2a2a2a;
         outline-color: #66b3ff;
     }
@@ -1074,7 +1108,7 @@ ul.search-results-list a.result-link:focus {
     }
 
     .map-group-button:hover,
-    .map-group-button:focus {
+    .map-group-button:focus-visible {
         background-color: #333;
         border-color: #66b3ff;
         outline-color: #66b3ff;
@@ -1270,7 +1304,7 @@ ul.search-results-list a.result-link:focus {
     width: 100%;
 }
 
-.exit-item:focus {
+.exit-item:focus-visible {
     border-color: #0066cc;
     outline: 2px solid #0066cc;
     outline-offset: 2px;
@@ -1375,7 +1409,7 @@ ul.search-results-list a.result-link:focus {
     border-right-color: #0066cc;
 }
 
-.exits-tab:focus {
+.exits-tab:focus-visible {
     outline: 2px solid #0066cc;
     outline-offset: 1px;
     z-index: 1;
@@ -1431,7 +1465,7 @@ ul.search-results-list a.result-link:focus {
     border-color: #0066cc;
 }
 
-.stringproc-subtab:focus {
+.stringproc-subtab:focus-visible {
     outline: 2px solid #0066cc;
     outline-offset: 1px;
 }
@@ -1614,9 +1648,13 @@ details summary:hover::before {
         color: #cbd5e1;
     }
     
-    .exit-item:hover, .exit-item:focus {
+    .exit-item:hover, .exit-item:focus-visible {
         background-color: #334155;
         border-color: #66b3ff;
+    }
+
+    .exit-item:focus-visible {
+        outline-color: #66b3ff;
     }
     
     .exit-command {
@@ -1661,7 +1699,7 @@ details summary:hover::before {
         border-right-color: #3399ff;
     }
     
-    .exits-tab:focus {
+    .exits-tab:focus-visible {
         outline-color: #66b3ff;
     }
     
@@ -1687,7 +1725,7 @@ details summary:hover::before {
         color: white;
     }
     
-    .stringproc-subtab:focus {
+    .stringproc-subtab:focus-visible {
         outline-color: #66b3ff;
     }
 
@@ -2032,15 +2070,6 @@ details summary:hover::before {
 
     #opacity_toggle {
         margin-top: 0;
-    }
-
-    #opacity_toggle input {
-        transform: none;
-        margin-right: 4px;
-    }
-
-    #opacity_toggle label {
-        font-size: 13px;
     }
 
     /* Highlight controls: label + select pairs that wrap instead of overflowing */
@@ -2673,7 +2702,7 @@ mark.result-match {
         background-color: #1a5fb4;
     }
 
-    .loading-retry:focus {
+    .loading-retry:focus-visible {
         outline-color: #66b3ff;
     }
 }
@@ -2691,5 +2720,92 @@ mark.result-match {
             transparent 6px,
             transparent 12px
         );
+    }
+}
+
+/* ==========================================================================
+   Phase 0: 404 / room-not-found layout, Dim map dark variant, map tooltip
+   ========================================================================== */
+.not-found-main {
+    padding: 20px;
+}
+
+.not-found-actions {
+    margin-top: 15px;
+}
+
+.not-found-link {
+    font-weight: bold;
+}
+
+#updated_at.not-found-footer {
+    margin-top: 30px;
+}
+
+/* Hover tooltip for rooms on the map. It is positioned on screen from JS (left/top),
+   sits over light map art in both themes, so it uses a dark surface with a light edge. */
+.map-tooltip {
+    position: fixed;
+    z-index: 200;
+    max-width: 260px;
+    padding: 6px 10px;
+    border: 1px solid #0f172a;
+    border-radius: 6px;
+    background-color: #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    color: #f8fafc;
+    font-size: 13px;
+    line-height: 1.35;
+    pointer-events: none;
+    animation: map-tooltip-in 0.12s ease-out;
+}
+
+.map-tooltip[hidden] {
+    display: none;
+}
+
+.map-tooltip-title {
+    display: block;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.map-tooltip-meta {
+    display: block;
+    color: #cbd5e1;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+@keyframes map-tooltip-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    #opacity_toggle {
+        border-color: #475569;
+    }
+
+    #opacity_toggle:has(input:checked) {
+        border-color: #66b3ff;
+        background-color: rgba(102, 179, 255, 0.15);
+    }
+
+    .map-tooltip {
+        border-color: #94a3b8;
+        background-color: #0b1220;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .map-tooltip {
+        animation: none;
     }
 }

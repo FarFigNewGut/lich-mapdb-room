@@ -13,9 +13,10 @@ let sameImageRooms = [];
 let mapResizeObserver = null;
 let mapZoom = 'fit';
 
-// escapeHtml() leaves double quotes alone, so attribute values need this extra step
+// escapeHtml() now escapes quotes itself, so it is attribute-safe; this name is kept
+// so the many existing attribute call sites read clearly
 function escapeAttr(str) {
-    return escapeHtml(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return escapeHtml(str);
 }
 
 // Destination title for an exit or StringProc; empty string if the room or title is missing
@@ -86,14 +87,14 @@ function renderNotFound(roomIdOrUid) {
             </div>
         </nav>
         
-        <main id="main-content" role="main" style="padding: 20px;">
+        <main id="main-content" role="main" class="not-found-main">
             <h1>Room Not Found</h1>
             <p>Could not find room with ID or UID: <strong>${escapeHtml(String(roomIdOrUid))}</strong></p>
             <p>The room may have been removed from the database, or the ID may be incorrect.</p>
-            <p style="margin-top: 15px;">
-                <a href="#/search" style="font-weight: bold;">← Return to search</a>
+            <p class="not-found-actions">
+                <a href="#/search" class="not-found-link">← Return to search</a>
             </p>
-            <footer id="updated_at" role="contentinfo" style="margin-top: 30px;">
+            <footer id="updated_at" role="contentinfo" class="not-found-footer">
                 <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
             </footer>
         </main>
@@ -146,7 +147,7 @@ function buildRoomHTML(room, queryParams) {
                     ${room.image ? `
                     <div id="opacity_toggle">
                         <input type="checkbox" id="opacity_checkbox">
-                        <label for="opacity_checkbox">Toggle opacity</label>
+                        <label for="opacity_checkbox" title="Fade the map so highlighted rooms stand out">Dim map</label>
                     </div>
                     ` : ''}
                 </div>
@@ -316,6 +317,7 @@ function buildMapSection(room) {
         <section id="map-section" aria-labelledby="map-description">
             <div id="image_wrapper">
                 <div id="highlight_box" class="highlight_box"></div>
+                <div id="map_tooltip" class="map-tooltip" aria-hidden="true" hidden></div>
                 <img id="mapimage" src="static/maps/${room.image}" alt="Map of ${escapeAttr(mapAlt)} showing room ${escapeAttr(room.title[0])}. Click on rooms to navigate or use the nearby rooms list below for accessible navigation." role="img" tabindex="0">
                 <div id="map-description" class="sr-only">
                     Interactive map showing ${escapeHtml(room.title[0])} and connected rooms. Use tab to navigate to room connections below or use the text-based navigation.
@@ -643,6 +645,7 @@ function initRoomInteractions(room, queryParams) {
             if (hasHighlightParams) highlightRooms();
         });
         mapImage.addEventListener('click', handleMapClick);
+        initMapTooltip();
         if (mapImage.complete) {
             fixHighlightBox(room);
             if (hasHighlightParams) highlightRooms();
@@ -1370,18 +1373,21 @@ function updateZoomControls() {
     document.getElementById('map_zoom_center').setAttribute('aria-disabled', String(isFit));
 }
 
-// Click-to-navigate. The click is measured against the image's own on-screen box, so it is
-// correct at any zoom level and any scroll position of the zoomed viewport.
-function handleMapClick(event) {
+// Finds the room under a screen point. The point is measured against the image's own
+// on-screen box, so the result is correct at any zoom level and scroll position.
+// Shared by click-to-navigate and the hover tooltip so both agree on what is under the pointer.
+function findRoomAtPoint(clientX, clientY) {
     const imgElement = document.getElementById('mapimage');
+    if (!imgElement || !imgElement.naturalWidth || !imgElement.naturalHeight) return null;
+    
     const imageRect = imgElement.getBoundingClientRect();
-    const clickX = event.clientX - imageRect.left;
-    const clickY = event.clientY - imageRect.top;
+    const pointX = clientX - imageRect.left;
+    const pointY = clientY - imageRect.top;
     
     const widthRatio = imgElement.clientWidth / imgElement.naturalWidth;
     const heightRatio = imgElement.clientHeight / imgElement.naturalHeight;
     
-    let clickedRoom = null;
+    let foundRoom = null;
     sameImageRooms.forEach(room => {
         if (room.image_coords) {
             const originalX = Math.floor(widthRatio * room.image_coords[0]);
@@ -1401,16 +1407,114 @@ function handleMapClick(event) {
             const roomRight = roomLeft + finalWidth;
             const roomBottom = roomTop + finalHeight;
             
-            if (clickX >= roomLeft && clickX <= roomRight &&
-                clickY >= roomTop && clickY <= roomBottom) {
-                clickedRoom = room;
+            if (pointX >= roomLeft && pointX <= roomRight &&
+                pointY >= roomTop && pointY <= roomBottom) {
+                foundRoom = room;
             }
         }
     });
     
-    if (clickedRoom) {
+    return foundRoom;
+}
+
+// Click-to-navigate. Clicking the room you are already viewing does nothing,
+// which matches the old behavior (its box sat on top of the image and swallowed the click).
+function handleMapClick(event) {
+    const clickedRoom = findRoomAtPoint(event.clientX, event.clientY);
+    
+    if (clickedRoom && clickedRoom.id !== currentRoom?.id) {
+        hideMapTooltip();
         navigateToRoom(clickedRoom.id);
     }
+}
+
+// ----- Map hover tooltip (a mouse affordance only) -----
+// Keyboard and screen-reader users get the same room information from the exits,
+// the nearby rooms list and the highlight announcements, so the tooltip is aria-hidden.
+
+let tooltipFrame = 0;
+let tooltipRoomId = null;
+
+function initMapTooltip() {
+    const imgElement = document.getElementById('mapimage');
+    const wrapper = document.getElementById('image_wrapper');
+    if (!imgElement || !wrapper) return;
+    
+    tooltipRoomId = null;
+    
+    imgElement.addEventListener('pointermove', (event) => {
+        // Touch has no hover; taps are handled by the click handler
+        if (event.pointerType === 'touch') return;
+        
+        const { clientX, clientY } = event;
+        if (tooltipFrame) cancelAnimationFrame(tooltipFrame);
+        tooltipFrame = requestAnimationFrame(() => {
+            tooltipFrame = 0;
+            updateMapTooltip(clientX, clientY);
+        });
+    });
+    imgElement.addEventListener('pointerleave', hideMapTooltip);
+    
+    // The tooltip is fixed to the screen, so it must go away when the map moves under the pointer.
+    // These are named functions, so re-registering on the next room doesn't stack listeners.
+    wrapper.addEventListener('scroll', hideMapTooltip, { passive: true });
+    window.addEventListener('scroll', hideMapTooltip, { passive: true });
+    document.addEventListener('keydown', handleTooltipKeydown);
+}
+
+function handleTooltipKeydown(event) {
+    if (event.key === 'Escape') hideMapTooltip();
+}
+
+function updateMapTooltip(clientX, clientY) {
+    const tooltip = document.getElementById('map_tooltip');
+    const imgElement = document.getElementById('mapimage');
+    if (!tooltip || !imgElement) return;
+    
+    const room = findRoomAtPoint(clientX, clientY);
+    if (!room) {
+        hideMapTooltip();
+        return;
+    }
+    
+    // Only other rooms are clickable, so only they get the pointer cursor
+    imgElement.classList.toggle('map-room-hover', room.id !== currentRoom?.id);
+    
+    // Rebuild the content only when the room under the pointer changes
+    if (tooltipRoomId !== room.id) {
+        tooltipRoomId = room.id;
+        const title = room.title?.[0] || 'Unknown';
+        tooltip.innerHTML = `
+            <span class="map-tooltip-title">${escapeHtml(title)}</span>
+            <span class="map-tooltip-meta">Room ${escapeHtml(String(room.id))}${room.id === currentRoom?.id ? ' (this room)' : ''}</span>
+        `;
+    }
+    
+    tooltip.hidden = false;
+    
+    // Sit just below and to the right of the pointer; flip to the other side near screen edges
+    const gap = 14;
+    const margin = 8;
+    const width = tooltip.offsetWidth;
+    const height = tooltip.offsetHeight;
+    let left = clientX + gap;
+    let top = clientY + gap + 4;
+    if (left + width > window.innerWidth - margin) left = clientX - width - gap;
+    if (top + height > window.innerHeight - margin) top = clientY - height - gap;
+    tooltip.style.left = `${Math.max(margin, left)}px`;
+    tooltip.style.top = `${Math.max(margin, top)}px`;
+}
+
+function hideMapTooltip() {
+    if (tooltipFrame) {
+        cancelAnimationFrame(tooltipFrame);
+        tooltipFrame = 0;
+    }
+    tooltipRoomId = null;
+    
+    const tooltip = document.getElementById('map_tooltip');
+    if (tooltip) tooltip.hidden = true;
+    document.getElementById('mapimage')?.classList.remove('map-room-hover');
 }
 
 function navigateToRoom(roomId) {

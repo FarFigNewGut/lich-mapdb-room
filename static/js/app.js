@@ -141,13 +141,13 @@ async function main() {
                     </div>
                 </nav>
                 
-                <main id="main-content" role="main" style="padding: 20px;">
+                <main id="main-content" role="main" class="not-found-main">
                     <h1>Page Not Found</h1>
                     <p>The page <strong>${escapeHtml(path)}</strong> does not exist.</p>
-                    <p style="margin-top: 15px;">
-                        <a href="#/search" style="font-weight: bold;">← Go to search</a>
+                    <p class="not-found-actions">
+                        <a href="#/search" class="not-found-link">← Go to search</a>
                     </p>
-                    <footer id="updated_at" role="contentinfo" style="margin-top: 30px;">
+                    <footer id="updated_at" role="contentinfo" class="not-found-footer">
                         <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
                     </footer>
                 </main>
