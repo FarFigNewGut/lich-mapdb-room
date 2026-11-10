@@ -5,9 +5,13 @@ import { announceToScreenReader, escapeHtml, getUpdatedAt } from './utils.js';
 const COMPASS_ORDER = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest', 'up', 'down', 'out'];
 const COMPASS_ALIASES = { n: 'north', ne: 'northeast', e: 'east', se: 'southeast', s: 'south', sw: 'southwest', w: 'west', nw: 'northwest' };
 
+// Zoom steps as a fraction of the image's natural size; 'fit' is the responsive default
+const MAP_ZOOM_STEPS = [0.2, 0.35, 0.5, 0.75, 1, 1.5, 2, 3];
+
 let currentRoom = null;
 let sameImageRooms = [];
 let mapResizeObserver = null;
+let mapZoom = 'fit';
 
 // escapeHtml() leaves double quotes alone, so attribute values need this extra step
 function escapeAttr(str) {
@@ -153,7 +157,7 @@ function buildRoomHTML(room, queryParams) {
         <div id="copy_link_popup" role="alert" aria-live="polite">Link copied to clipboard!</div>
         
         ${room.image ? buildHelpPopup() : ''}
-        ${room.image ? buildMapLegend() : ''}
+        ${room.image ? buildMapToolbar() : ''}
         ${room.image ? buildMapSection(room) : ''}
         
         <main id="main-content" role="main">
@@ -254,9 +258,31 @@ function buildHelpPopup() {
     `;
 }
 
-// Compact legend above the map. Sits outside #map-section because role="img" makes
-// that section's children presentational. Screen readers get the same information
-// from the highlight announcements, so this stays a visual aid.
+// Legend (left) and zoom controls (right) in one compact row above the map.
+// Screen readers get the legend's information from the highlight announcements,
+// so the legend stays a visual aid.
+function buildMapToolbar() {
+    return `
+        <div class="map-toolbar">
+            ${buildMapLegend()}
+            ${buildMapZoomControls()}
+        </div>
+    `;
+}
+
+function buildMapZoomControls() {
+    return `
+        <div class="map-zoom-controls" role="group" aria-label="Map zoom">
+            <button type="button" id="map_zoom_out" class="map-zoom-button" aria-label="Zoom out" title="Zoom out (minus key)">&minus;</button>
+            <span id="map_zoom_level" class="map-zoom-level">Fit</span>
+            <button type="button" id="map_zoom_in" class="map-zoom-button" aria-label="Zoom in" title="Zoom in (plus key)">+</button>
+            <button type="button" id="map_zoom_fit" class="map-zoom-button" aria-pressed="true" aria-label="Fit map to width" title="Fit map to width (0 key)">Fit</button>
+            <button type="button" id="map_zoom_actual" class="map-zoom-button" aria-pressed="false" aria-label="Show map at 100% size" title="Show map at 100% size">100%</button>
+            <button type="button" id="map_zoom_center" class="map-zoom-button" aria-disabled="true" aria-label="Center on current room" title="Center on current room">Center</button>
+        </div>
+    `;
+}
+
 function buildMapLegend() {
     return `
         <ul id="map_legend" class="map-legend" aria-label="Map highlight legend">
@@ -287,7 +313,7 @@ function buildMapLegend() {
 function buildMapSection(room) {
     const mapAlt = room.image.replace(/_/g, ' ').replace(/\.(png|jpg|gif)$/i, '');
     return `
-        <section id="map-section" role="img" aria-labelledby="map-description">
+        <section id="map-section" aria-labelledby="map-description">
             <div id="image_wrapper">
                 <div id="highlight_box" class="highlight_box"></div>
                 <img id="mapimage" src="static/maps/${room.image}" alt="Map of ${escapeAttr(mapAlt)} showing room ${escapeAttr(room.title[0])}. Click on rooms to navigate or use the nearby rooms list below for accessible navigation." role="img" tabindex="0">
@@ -627,6 +653,7 @@ function initRoomInteractions(room, queryParams) {
             if (hasHighlightParams) highlightRooms();
         }
         watchMapResize(room);
+        initMapZoom(room);
     }
     
     const helpIcon = document.getElementById('help_icon');
@@ -1144,30 +1171,220 @@ function watchMapResize(room) {
         frame = requestAnimationFrame(() => {
             frame = 0;
             if (!imgElement.naturalWidth) return;
-            fixHighlightBox(room);
-            renderHighlightBoxes(
-                document.getElementById('tag_dropdown')?.value || '',
-                document.getElementById('location_dropdown')?.value || ''
-            );
+            syncMapOverlays(room);
+            updateZoomControls();
         });
     });
     mapResizeObserver.observe(imgElement);
 }
 
-function handleMapClick(event) {
-    const wrapper = document.getElementById('image_wrapper');
-    const rect = wrapper.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const clickY = event.clientY - rect.top;
-    
+// Redraws every overlay (current-room box, tag/location boxes, legend counts) for the
+// image's current rendered size. Called after resizes and after every zoom change.
+function syncMapOverlays(room) {
+    fixHighlightBox(room);
+    renderHighlightBoxes(
+        document.getElementById('tag_dropdown')?.value || '',
+        document.getElementById('location_dropdown')?.value || ''
+    );
+}
+
+// ----- Map zoom -----
+// Fit: the image keeps its responsive max-width and the page scrolls normally.
+// Zoomed: #image_wrapper becomes a scrollable viewport and the image is shown at
+// natural size x zoom (the width comes from the --map-width variable).
+
+function getEffectiveMapScale(imgElement) {
+    return imgElement.naturalWidth ? imgElement.clientWidth / imgElement.naturalWidth : 1;
+}
+
+// Next zoom step above (direction 1) or below (direction -1) the current scale.
+// The 10% margin keeps a tiny step, like 47% to 50%, from feeling like nothing happened.
+function findZoomStep(scale, direction) {
+    if (direction > 0) {
+        return MAP_ZOOM_STEPS.find(step => step > scale * 1.1) || null;
+    }
+    return [...MAP_ZOOM_STEPS].reverse().find(step => step < scale / 1.1) || null;
+}
+
+function initMapZoom(room) {
     const imgElement = document.getElementById('mapimage');
-    const origWidth = imgElement.naturalWidth;
-    const origHeight = imgElement.naturalHeight;
-    const renderedWidth = imgElement.clientWidth;
-    const renderedHeight = imgElement.clientHeight;
+    const wrapper = document.getElementById('image_wrapper');
+    if (!imgElement || !wrapper || !document.getElementById('map_zoom_in')) return;
     
-    const widthRatio = renderedWidth / origWidth;
-    const heightRatio = renderedHeight / origHeight;
+    // aria-disabled (not disabled) keeps keyboard focus on the button when a limit is reached
+    const bind = (id, handler) => {
+        document.getElementById(id).addEventListener('click', (e) => {
+            if (e.currentTarget.getAttribute('aria-disabled') === 'true') return;
+            handler();
+        });
+    };
+    
+    bind('map_zoom_in', () => stepMapZoom(1));
+    bind('map_zoom_out', () => stepMapZoom(-1));
+    bind('map_zoom_fit', () => applyMapZoom('fit', { announce: true }));
+    bind('map_zoom_actual', () => applyMapZoom(1, { announce: true }));
+    bind('map_zoom_center', () => centerMapOnRoom(room, getScrollBehavior()));
+    
+    wrapper.addEventListener('keydown', handleMapZoomKeydown);
+    
+    // Restore the zoom level from the previous room, then center on this room's box
+    const restoreZoom = () => applyMapZoom(mapZoom, { focus: 'room' });
+    if (imgElement.complete && imgElement.naturalWidth) {
+        restoreZoom();
+    } else {
+        imgElement.addEventListener('load', restoreZoom, { once: true });
+    }
+    updateZoomControls();
+}
+
+function stepMapZoom(direction) {
+    const imgElement = document.getElementById('mapimage');
+    if (!imgElement || !imgElement.naturalWidth) return;
+    
+    const next = findZoomStep(getEffectiveMapScale(imgElement), direction);
+    if (next === null) {
+        announceToScreenReader(direction > 0 ? 'Maximum zoom reached' : 'Minimum zoom reached');
+        return;
+    }
+    applyMapZoom(next, { announce: true });
+}
+
+function handleMapZoomKeydown(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    
+    switch (event.key) {
+        case '+':
+        case '=':
+            event.preventDefault();
+            stepMapZoom(1);
+            break;
+        case '-':
+        case '_':
+            event.preventDefault();
+            stepMapZoom(-1);
+            break;
+        case '0':
+            event.preventDefault();
+            applyMapZoom('fit', { announce: true });
+            break;
+    }
+}
+
+// zoom: 'fit' or a number (fraction of natural size).
+// focus: 'room' centers the current room; 'keep' holds the middle of the view steady.
+// Leaving Fit always centers the room, since there was no scroll position to keep.
+function applyMapZoom(zoom, { focus = 'keep', announce = false } = {}) {
+    const wrapper = document.getElementById('image_wrapper');
+    const imgElement = document.getElementById('mapimage');
+    if (!wrapper || !imgElement || !imgElement.naturalWidth) return;
+    
+    const wasZoomed = wrapper.classList.contains('map-zoomed');
+    
+    // Where the middle of the viewport sits on the image, as a fraction, before resizing
+    let focusX = 0.5;
+    let focusY = 0.5;
+    if (wasZoomed && imgElement.clientWidth && imgElement.clientHeight) {
+        const style = window.getComputedStyle(wrapper);
+        focusX = (wrapper.scrollLeft + wrapper.clientWidth / 2 - parseFloat(style.paddingLeft)) / imgElement.clientWidth;
+        focusY = (wrapper.scrollTop + wrapper.clientHeight / 2 - parseFloat(style.paddingTop)) / imgElement.clientHeight;
+    }
+    
+    mapZoom = zoom;
+    
+    if (zoom === 'fit') {
+        wrapper.classList.remove('map-zoomed');
+        wrapper.style.removeProperty('--map-width');
+        wrapper.removeAttribute('tabindex');
+        wrapper.removeAttribute('role');
+        wrapper.removeAttribute('aria-label');
+        wrapper.scrollLeft = 0;
+        wrapper.scrollTop = 0;
+    } else {
+        wrapper.classList.add('map-zoomed');
+        wrapper.style.setProperty('--map-width', `${Math.round(imgElement.naturalWidth * zoom)}px`);
+        // A scrollable region must be focusable so keyboard users can pan it with the arrow keys
+        wrapper.setAttribute('tabindex', '0');
+        wrapper.setAttribute('role', 'group');
+        wrapper.setAttribute('aria-label', 'Zoomed map. Scroll with the arrow keys. Press plus or minus to zoom, 0 to fit.');
+    }
+    
+    // Layout is up to date by now, so overlays can be placed against the new size right away
+    // (the ResizeObserver repeats this on the next frame, which is harmless)
+    syncMapOverlays(currentRoom);
+    
+    if (zoom !== 'fit') {
+        if (focus === 'room' || !wasZoomed) {
+            centerMapOnRoom(currentRoom, 'auto');
+        } else {
+            const style = window.getComputedStyle(wrapper);
+            wrapper.scrollTo({
+                left: focusX * imgElement.clientWidth + parseFloat(style.paddingLeft) - wrapper.clientWidth / 2,
+                top: focusY * imgElement.clientHeight + parseFloat(style.paddingTop) - wrapper.clientHeight / 2,
+                behavior: 'auto'
+            });
+        }
+    }
+    
+    updateZoomControls();
+    
+    if (announce) {
+        const percent = Math.round(getEffectiveMapScale(imgElement) * 100);
+        announceToScreenReader(zoom === 'fit' ? `Map fitted to width, ${percent}%` : `Map zoom ${percent}%`);
+    }
+}
+
+// Scrolls the zoomed viewport so the current room's box is in the middle.
+// Page-load and room-switch calls pass 'auto' (an instant jump); the Center button
+// passes getScrollBehavior() so it animates unless reduced motion is requested.
+function centerMapOnRoom(room, behavior) {
+    const wrapper = document.getElementById('image_wrapper');
+    const imgElement = document.getElementById('mapimage');
+    if (!wrapper || !imgElement || !room?.image_coords) return;
+    if (!wrapper.classList.contains('map-zoomed') || !imgElement.naturalWidth) return;
+    
+    const style = window.getComputedStyle(wrapper);
+    const widthRatio = imgElement.clientWidth / imgElement.naturalWidth;
+    const heightRatio = imgElement.clientHeight / imgElement.naturalHeight;
+    const [x1, y1, x2, y2] = room.image_coords;
+    
+    const centerX = parseFloat(style.paddingLeft) + ((x1 + x2) / 2) * widthRatio;
+    const centerY = parseFloat(style.paddingTop) + ((y1 + y2) / 2) * heightRatio;
+    
+    wrapper.scrollTo({
+        left: Math.max(0, centerX - wrapper.clientWidth / 2),
+        top: Math.max(0, centerY - wrapper.clientHeight / 2),
+        behavior
+    });
+}
+
+function updateZoomControls() {
+    const imgElement = document.getElementById('mapimage');
+    const level = document.getElementById('map_zoom_level');
+    if (!imgElement || !level || !imgElement.naturalWidth) return;
+    
+    const scale = getEffectiveMapScale(imgElement);
+    const percent = Math.round(scale * 100);
+    const isFit = mapZoom === 'fit';
+    
+    level.textContent = isFit ? `Fit ${percent}%` : `${percent}%`;
+    
+    document.getElementById('map_zoom_in').setAttribute('aria-disabled', String(findZoomStep(scale, 1) === null));
+    document.getElementById('map_zoom_out').setAttribute('aria-disabled', String(findZoomStep(scale, -1) === null));
+    document.getElementById('map_zoom_fit').setAttribute('aria-pressed', String(isFit));
+    document.getElementById('map_zoom_actual').setAttribute('aria-pressed', String(!isFit && Math.abs(mapZoom - 1) < 0.001));
+    document.getElementById('map_zoom_center').setAttribute('aria-disabled', String(isFit));
+}
+
+// Click-to-navigate. The click is measured against the image's own on-screen box, so it is
+// correct at any zoom level and any scroll position of the zoomed viewport.
+function handleMapClick(event) {
+    const imgElement = document.getElementById('mapimage');
+    const imageRect = imgElement.getBoundingClientRect();
+    const clickX = event.clientX - imageRect.left;
+    const clickY = event.clientY - imageRect.top;
+    
+    const widthRatio = imgElement.clientWidth / imgElement.naturalWidth;
+    const heightRatio = imgElement.clientHeight / imgElement.naturalHeight;
     
     let clickedRoom = null;
     sameImageRooms.forEach(room => {
@@ -1184,13 +1401,8 @@ function handleMapClick(event) {
             const widthAdjustment = (finalWidth - originalWidth) / 2;
             const heightAdjustment = (finalHeight - originalHeight) / 2;
             
-            const imageWrapper = document.getElementById('image_wrapper');
-            const wrapperStyle = window.getComputedStyle(imageWrapper);
-            const paddingLeft = parseFloat(wrapperStyle.paddingLeft);
-            const paddingTop = parseFloat(wrapperStyle.paddingTop);
-            
-            const roomLeft = originalX - widthAdjustment + paddingLeft;
-            const roomTop = originalY - heightAdjustment + paddingTop;
+            const roomLeft = originalX - widthAdjustment;
+            const roomTop = originalY - heightAdjustment;
             const roomRight = roomLeft + finalWidth;
             const roomBottom = roomTop + finalHeight;
             
