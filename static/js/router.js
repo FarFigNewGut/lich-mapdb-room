@@ -73,6 +73,9 @@ function parseQueryString(queryString) {
 }
 
 export function init() {
+    // hashchange covers every hash change: link clicks, back/forward traversal,
+    // and manual URL edits. Programmatic navigation goes through navigate(), which
+    // pushState/replaceState (neither fires an event) and calls handleRoute() itself.
+    // A popstate listener here is redundant and double-renders on back/forward.
     window.addEventListener('hashchange', handleRoute);
-    window.addEventListener('popstate', handleRoute);
 }

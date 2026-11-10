@@ -7,13 +7,22 @@ let db = null;
 let roomData = [];
 let roomById = {};
 let roomByUid = {};
+let roomsByImage = new Map();
 let allTags = [];
 let mapCategories = [];
 let updatedAtValue = '';
 
+// onProgress(message, detail): message is always a short status string. While the room
+// data downloads, detail is also passed as { received, total, hadCache }; total is 0 when
+// the size is unknown. Cached loads never send a detail, so they show no download UI.
 export async function initData(onProgress) {
     onProgress?.('Checking cache...');
     
+    // A retry after a failed load starts from a fresh connection
+    if (db) {
+        db.close();
+        db = null;
+    }
     db = await openDatabase();
     
     const cachedMeta = await getMeta('updated_at');
@@ -25,7 +34,7 @@ export async function initData(onProgress) {
         updatedAtValue = cachedMeta;
     } else {
         onProgress?.('Downloading room data...');
-        roomData = await fetchRoomData();
+        roomData = await fetchRoomData(onProgress, Boolean(cachedMeta));
         onProgress?.('Caching data...');
         try {
             await saveToCache(roomData, serverUpdatedAt);
@@ -73,9 +82,58 @@ async function fetchUpdatedAt() {
     }
 }
 
-async function fetchRoomData() {
+// Downloads map.json, reporting progress as the bytes arrive. Parsing is unchanged: the
+// chunks are handed to the same Response.json() path. Without streaming support it
+// falls back to a plain response.json().
+async function fetchRoomData(onProgress, hadCache) {
     const response = await fetch('data/map.json');
-    return await response.json();
+    if (!response.ok) {
+        throw new Error(`Could not download room data (HTTP ${response.status})`);
+    }
+    
+    let reader = null;
+    try {
+        reader = response.body?.getReader?.() ?? null;
+    } catch {
+        reader = null;
+    }
+    if (!reader) {
+        return await response.json();
+    }
+    
+    // Content-Length counts the compressed bytes, but the stream delivers decoded bytes,
+    // so for compressed responses the length can't be used for a percentage
+    const encoding = (response.headers.get('content-encoding') || '').toLowerCase();
+    const isCompressed = encoding !== '' && encoding !== 'identity';
+    const contentLength = Number(response.headers.get('content-length'));
+    const total = !isCompressed && Number.isFinite(contentLength) && contentLength > 0 ? contentLength : 0;
+    
+    const chunks = [];
+    let received = 0;
+    let lastReport = 0;
+    
+    const report = (force) => {
+        const now = performance.now();
+        if (!force && now - lastReport < 100) return;
+        lastReport = now;
+        onProgress?.('Downloading room data...', { received, total, hadCache });
+    };
+    
+    report(true);
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        report(false);
+    }
+    report(true);
+    
+    // Parsing 40+ MB of JSON blocks the page, so let the status text paint first
+    onProgress?.('Processing room data...');
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    return await new Response(new Blob(chunks)).json();
 }
 
 async function getMeta(key) {
@@ -120,11 +178,24 @@ async function saveToCache(data, updatedAt) {
 }
 
 function buildIndices() {
+    roomById = {};
+    roomByUid = {};
+    roomsByImage = new Map();
     const tagsSet = new Set();
     const mapsData = {};
     
     for (const room of roomData) {
         roomById[room.id] = room;
+        
+        // Rooms keep their roomData order within each image's list
+        if (room.image) {
+            const imageRooms = roomsByImage.get(room.image);
+            if (imageRooms) {
+                imageRooms.push(room);
+            } else {
+                roomsByImage.set(room.image, [room]);
+            }
+        }
         
         if (room.uid && Array.isArray(room.uid)) {
             for (const uid of room.uid) {
@@ -182,8 +253,20 @@ export function getRoomById(id) {
     return roomByUid[id] || null;
 }
 
+// Strict numeric-id lookup (no uid fallback, unlike getRoomById)
+export function getRoomByNumericId(id) {
+    return roomById[id] || null;
+}
+
 export function getAllRooms() {
     return roomData;
+}
+
+// All rooms (with or without image_coords) on an image, in roomData order.
+// Returns a copy so callers can't mutate the index.
+export function getRoomsByImage(imageName) {
+    const imageRooms = imageName ? roomsByImage.get(imageName) : null;
+    return imageRooms ? imageRooms.slice() : [];
 }
 
 export function getAllTags() {
@@ -195,7 +278,10 @@ export function getMapCategories() {
 }
 
 export function getRoomsOnMap(imageName) {
-    return roomData.filter(r => r.image === imageName && r.image_coords);
+    if (!imageName) {
+        return roomData.filter(r => r.image === imageName && r.image_coords);
+    }
+    return (roomsByImage.get(imageName) || []).filter(r => r.image_coords);
 }
 
 export function getUpdatedAt() {

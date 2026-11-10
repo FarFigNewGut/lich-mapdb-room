@@ -164,32 +164,10 @@ footer {
         outline-offset: 2px;
         background-color: #ffff00;
     }
-
-    .highlight_box {
-        border-width: 4px;
-    }
-
-    .tag_highlight_box,
-    .location_highlight_box,
-    .both_highlight_box {
-        border-width: 4px;
-    }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-    .highlight_box,
-    .highlight_box::before,
-    .highlight_box::after {
-        animation: none;
-    }
-
-    .highlight_box_example,
-    .highlight_box_example::before,
-    .highlight_box_example::after {
-        animation: none;
-    }
-
     .skip-link {
         transition: none;
     }
@@ -249,55 +227,33 @@ select[disabled] {
 .highlight_box {
     padding: 0;
     position: absolute;
-    border: 2px solid palevioletred;
-    animation: animationFrames 5s infinite;
     z-index: 9;
 }
 
-.highlight_box::before,
-.highlight_box::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    animation: animationFrames 5s infinite;
-}
-
-.highlight_box::before {
-    background: linear-gradient(45deg, transparent 46%, palevioletred 46%, palevioletred 54%, transparent 54%);
-}
-
-.highlight_box::after {
-    background: linear-gradient(-45deg, transparent 46%, palevioletred 46%, palevioletred 54%, transparent 54%);
-}
-
 #mapimage {
-    max-width: 700px;
+    max-width: 100%;
     z-index: 1;
     position: relative;
     cursor: pointer;
 }
-#mapimage:hover {
-    -webkit-filter: opacity(20%);
-    -moz-filter: opacity(20%);
-    -o-filter: opacity(20%);
-    -ms-filter: opacity(20%);
-    filter: opacity(20%);
-}
-@keyframes animationFrames {
-    0% {
-        border-color: palevioletred;
-    }
-    50% {
-        border-color: green;
-    }
-    100% {
-        border-color: palevioletred;
+
+/* Desktop keeps the 700px display cap; phones and small tablets fit the screen */
+@media (min-width: 769px) {
+    #mapimage {
+        max-width: 700px;
     }
 }
 
+/* Only fade on hover where hover really exists, so a tap on a phone doesn't leave the map faded */
+@media (hover: hover) {
+    #mapimage:hover {
+        -webkit-filter: opacity(20%);
+        -moz-filter: opacity(20%);
+        -o-filter: opacity(20%);
+        -ms-filter: opacity(20%);
+        filter: opacity(20%);
+    }
+}
 #image_wrapper {
     padding: 1px 25px 5px 25px;
     position: relative;
@@ -399,6 +355,7 @@ article#full_info_article {
     padding-top: 0;
     padding-bottom: 2px;
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
     gap: 8px;
 }
@@ -483,10 +440,19 @@ article#full_info_article {
     margin-bottom: 0;
 }
 
+/* Icon buttons in the nav row. These are real <button>s, so the Pico button
+   defaults (full width, block, bottom margin, focus ring) are reset here. */
 #search_link,
 #scroll_top_btn,
 #copy_link_btn {
-    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 32px;
+    min-height: 32px;
+    margin: 0;
+    font-size: 16px;
     color: inherit;
     padding: 2px 4px;
     cursor: pointer;
@@ -494,7 +460,9 @@ article#full_info_article {
     line-height: 1;
     background: transparent;
     border: none;
+    border-radius: 4px;
     outline: none;
+    box-shadow: none;
 }
 
 #search_link:hover,
@@ -502,6 +470,15 @@ article#full_info_article {
 #copy_link_btn:hover {
     opacity: 0.7;
     background: transparent;
+}
+
+/* Visible keyboard focus (the base rule removes the mouse-click ring) */
+#search_link:focus-visible,
+#scroll_top_btn:focus-visible,
+#copy_link_btn:focus-visible {
+    outline: 3px solid #0066cc;
+    outline-offset: 1px;
+    box-shadow: none;
 }
 
 #map_dropdown optgroup,
@@ -517,7 +494,20 @@ article#full_info_article {
 #adjacent_map_dropdown option {
     font-weight: normal;
     font-size: 11px !important;
-    color: hsl(205deg, 16%, 77%) !important;
+    color: #334155 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    #map_dropdown optgroup,
+    #adjacent_map_dropdown optgroup {
+        background-color: #1e293b;
+        color: #66b3ff;
+    }
+
+    #map_dropdown option,
+    #adjacent_map_dropdown option {
+        color: hsl(205deg, 16%, 77%) !important;
+    }
 }
 
 #mapimage.opacity_active {
@@ -528,114 +518,107 @@ article#full_info_article {
     filter: opacity(20%);
 }
 
+/* Map highlight boxes.
+   Meaning is carried by shape as well as color: current room = amber glow, tag = solid
+   teal ring, location = dashed violet ring, both = teal ring with a violet ring inside.
+   Each box also has a white + dark hairline halo and a translucent fill so it stays
+   visible on white, blue and magenta map art. The boxes are drawn over the map image
+   (which stays light in dark mode), so one palette is used in both themes. */
 .highlight_box,
 .tag_highlight_box,
 .location_highlight_box,
 .both_highlight_box {
+    box-sizing: border-box;
     opacity: 1 !important;
     -webkit-filter: none !important;
     -moz-filter: none !important;
     -o-filter: none !important;
     -ms-filter: none !important;
     filter: none !important;
-    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.tag_highlight_box {
-    pointer-events: none;
-    box-sizing: border-box;
-    border: 2px solid blue;
-}
-
-.tag_highlight_box::before,
-.tag_highlight_box::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.tag_highlight_box::before {
-    background: linear-gradient(45deg, transparent 46%, blue 46%, blue 54%, transparent 54%);
-}
-
-.tag_highlight_box::after {
-    background: linear-gradient(-45deg, transparent 46%, blue 46%, blue 54%, transparent 54%);
-}
-
-.location_highlight_box {
-    pointer-events: none;
-    box-sizing: border-box;
-    border: 2px solid lightgreen;
-}
-
-.location_highlight_box::before,
-.location_highlight_box::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.location_highlight_box::before {
-    background: linear-gradient(45deg, transparent 46%, lightgreen 46%, lightgreen 54%, transparent 54%);
-}
-
-.location_highlight_box::after {
-    background: linear-gradient(-45deg, transparent 46%, lightgreen 46%, lightgreen 54%, transparent 54%);
-}
-
+.tag_highlight_box,
+.location_highlight_box,
 .both_highlight_box {
     pointer-events: none;
-    box-sizing: border-box;
-    border: 2px solid darkviolet;
 }
 
-.both_highlight_box::before,
-.both_highlight_box::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+.highlight_box,
+.highlight_box_example {
+    border: 3px solid #f59e0b;
+    background-color: rgba(245, 158, 11, 0.3);
+    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), 0 0 8px 3px rgba(245, 158, 11, 0.8);
 }
 
-.both_highlight_box::before {
-    background: linear-gradient(45deg, transparent 46%, darkviolet 46%, darkviolet 54%, transparent 54%);
+.highlight_box {
+    animation: room-glow 2s ease-in-out infinite;
 }
 
-.both_highlight_box::after {
-    background: linear-gradient(-45deg, transparent 46%, darkviolet 46%, darkviolet 54%, transparent 54%);
+.tag_highlight_box,
+.tag_highlight_box_example {
+    border: 3px solid #0f766e;
+    background-color: rgba(20, 184, 166, 0.25);
+    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.85);
+}
+
+.location_highlight_box,
+.location_highlight_box_example {
+    border: 3px dashed #6d28d9;
+    background-color: rgba(124, 58, 237, 0.2);
+    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.85);
+}
+
+.both_highlight_box,
+.both_highlight_box_example {
+    border: 3px solid #0f766e;
+    background-color: rgba(20, 184, 166, 0.22);
+    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45),
+        inset 0 0 0 1px #fff, inset 0 0 0 3px #6d28d9, inset 0 0 0 4px #fff;
+}
+
+@keyframes room-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), 0 0 4px 1px rgba(245, 158, 11, 0.55);
+    }
+
+    50% {
+        box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), 0 0 12px 5px rgba(245, 158, 11, 0.95);
+    }
+}
+
+@media (prefers-contrast: more) {
+    .highlight_box,
+    .tag_highlight_box,
+    .location_highlight_box,
+    .both_highlight_box {
+        border-width: 4px;
+    }
 }
 
 #help_icon {
-    background-color: #007bff;
+    background-color: #0066cc;
     color: white;
     border: none;
     border-radius: 50%;
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 13px;
     font-weight: bold;
     cursor: pointer;
     margin-left: 5px;
     margin-bottom: 0px;
     user-select: none;
     padding: 0;
-    min-width: 16px;
-    min-height: 16px;
+    min-width: 24px;
+    min-height: 24px;
 }
 
 #help_icon:hover {
-    background-color: #0056b3;
+    background-color: #004d99;
 }
 
 #help_popup {
@@ -702,109 +685,6 @@ article#full_info_article {
     width: 30px;
     height: 20px;
     position: relative;
-    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.highlight_box_example {
-    border: 2px solid palevioletred;
-    animation: help_animationFrames 2s infinite;
-}
-
-.highlight_box_example::before,
-.highlight_box_example::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    animation: help_animationFrames 2s infinite;
-}
-
-.highlight_box_example::before {
-    background: linear-gradient(45deg, transparent 46%, palevioletred 46%, palevioletred 54%, transparent 54%);
-}
-
-.highlight_box_example::after {
-    background: linear-gradient(-45deg, transparent 46%, palevioletred 46%, palevioletred 54%, transparent 54%);
-}
-
-.tag_highlight_box_example {
-    border: 2px solid blue;
-}
-
-.tag_highlight_box_example::before,
-.tag_highlight_box_example::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.tag_highlight_box_example::before {
-    background: linear-gradient(45deg, transparent 46%, blue 46%, blue 54%, transparent 54%);
-}
-
-.tag_highlight_box_example::after {
-    background: linear-gradient(-45deg, transparent 46%, blue 46%, blue 54%, transparent 54%);
-}
-
-.location_highlight_box_example {
-    border: 2px solid lightgreen;
-}
-
-.location_highlight_box_example::before,
-.location_highlight_box_example::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.location_highlight_box_example::before {
-    background: linear-gradient(45deg, transparent 46%, lightgreen 46%, lightgreen 54%, transparent 54%);
-}
-
-.location_highlight_box_example::after {
-    background: linear-gradient(-45deg, transparent 46%, lightgreen 46%, lightgreen 54%, transparent 54%);
-}
-
-.both_highlight_box_example {
-    border: 2px solid darkviolet;
-}
-
-.both_highlight_box_example::before,
-.both_highlight_box_example::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.both_highlight_box_example::before {
-    background: linear-gradient(45deg, transparent 46%, darkviolet 46%, darkviolet 54%, transparent 54%);
-}
-
-.both_highlight_box_example::after {
-    background: linear-gradient(-45deg, transparent 46%, darkviolet 46%, darkviolet 54%, transparent 54%);
-}
-
-@keyframes help_animationFrames {
-    0% {
-        border-color: palevioletred;
-    }
-    50% {
-        border-color: green;
-    }
-    100% {
-        border-color: palevioletred;
-    }
 }
 
 /* Dark mode support */
@@ -834,25 +714,140 @@ article#full_info_article {
         border-color: #f59e0b;
         color: #fcd34d;
     }
+
+    select[disabled] {
+        background-color: #0f172a;
+        color: #94a3b8;
+    }
 }
 
-/* Compact and accessible search results styling */
-.search-results-list {
+/* Search page layout and forms.
+   Selectors prefixed with #main-content are intentional: Pico styles inputs with
+   input:not([type=...]) chains that a plain class cannot out-rank. */
+.search-main {
+    padding: 15px;
+}
+
+.search-intro {
+    margin-bottom: 15px;
+    color: #475569;
+    font-size: 14px;
+}
+
+#updated_at.search-footer {
+    margin-top: 20px;
+}
+
+.search-forms {
+    max-width: 600px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.search-basic-form {
+    margin-bottom: 8px;
+}
+
+.search-label {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.search-divider {
+    margin: 8px 0;
+}
+
+.search-fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.search-field {
+    margin-bottom: 4px;
+    padding-left: 0;
+}
+
+.search-field-tag {
+    position: relative;
+}
+
+#main-content .search-input,
+#main-content .search-select {
+    width: 100%;
+    padding: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+#main-content .search-input-spaced {
+    margin-bottom: 4px;
+}
+
+.search-button {
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+/* Tag autocomplete dropdown (search page) */
+.tag-suggestions {
+    display: none;
+    position: absolute;
+    top: calc(100% - 2px);
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    max-height: 150px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    background: #fff;
+}
+
+.tag-suggestions.visible {
+    display: block;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #eee;
+    background-color: #fff;
+    color: #334155;
+    list-style: none;
+    cursor: pointer;
+}
+
+.suggestion-item:hover,
+.suggestion-item.selected {
+    background-color: #0066cc;
+    color: #fff;
+}
+
+/* Compact and accessible search results styling.
+   The ul/a prefixes beat the generic ul[role="list"] rules defined near the top. */
+ul.search-results-list {
     margin-top: 8px;
     list-style: none;
     padding: 0;
 }
 
-.search-result-item {
-    margin-bottom: 2px;
-    border-bottom: 1px solid #eee;
+ul.search-results-list .search-result-item {
+    margin-bottom: 8px;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
 }
 
-.search-result-item:last-child {
-    border-bottom: none;
-}
-
-.result-link {
+ul.search-results-list a.result-link {
     display: block;
     padding: 6px 8px;
     text-decoration: none;
@@ -861,8 +856,8 @@ article#full_info_article {
     transition: background-color 0.15s ease;
 }
 
-.result-link:hover,
-.result-link:focus {
+ul.search-results-list a.result-link:hover,
+ul.search-results-list a.result-link:focus {
     background-color: #f0f8ff;
     text-decoration: none;
     outline: 2px solid #0066cc;
@@ -879,54 +874,33 @@ article#full_info_article {
 }
 
 .result-meta {
-    display: block;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
     font-size: 12px;
+    font-weight: normal;
     color: #666;
-    line-height: 1.1;
+    line-height: 1.4;
 }
 
-/* Dark mode support for search results */
-@media (prefers-color-scheme: dark) {
-    .search-result-item {
-        border-bottom-color: #444;
-    }
-
-    .result-link:hover,
-    .result-link:focus {
-        background-color: #2a2a2a;
-        outline-color: #66b3ff;
-    }
-
-    .result-title {
-        color: #66b3ff;
-    }
-
-    .result-meta {
-        color: #bbb;
-    }
-}
-
-/* Map groups styling for large result sets - zero spacing */
+/* Map groups for large result sets (one full-width button per map) */
 .map-groups-container {
-    margin: 5px 0 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 0 0;
     padding: 0;
-}
-
-.map-group-form {
-    margin: 0;
-    padding: 0;
-    display: block;
 }
 
 .map-group-button {
     display: block;
     width: 100%;
-    padding: 4px 6px;
+    padding: 8px 12px;
     margin: 0;
-    border: 1px solid #ddd;
-    border-top: none;
-    border-radius: 0;
-    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f5f5f5;
     color: inherit;
     text-align: left;
     cursor: pointer;
@@ -934,15 +908,6 @@ article#full_info_article {
     font-family: inherit;
     font-size: 13px;
     line-height: 1.2;
-}
-
-.map-group-form:first-child .map-group-button {
-    border-top: 1px solid #ddd;
-    border-radius: 2px 2px 0 0;
-}
-
-.map-group-form:last-child .map-group-button {
-    border-radius: 0 0 2px 2px;
 }
 
 .map-group-button:hover,
@@ -959,19 +924,148 @@ article#full_info_article {
 }
 
 .map-count {
-    font-size: 11px;
+    flex: none;
+    font-size: 12px;
+    font-weight: 600;
     color: #666;
-    margin-left: 2px;
+    font-variant-numeric: tabular-nums;
 }
 
 .unmapped-button .map-name {
-    color: #d97706;
+    color: #92400e;
 }
 
-/* Dark mode support for map groups */
+/* Fullscreen loading screen.
+   The #loading-screen resets neutralize the global [role="status"] box
+   (border, padding, margin) that would otherwise frame the loader. */
+#loading-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--background-color, #11191f);
+    color: var(--color, #fff);
+    z-index: 9999;
+}
+
+#loading-screen.hidden {
+    display: none;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(0, 0, 0, 0.15);
+    border-top-color: #0066cc;
+    border-radius: 50%;
+    animation: loading-spin 1s linear infinite;
+}
+
+.loading-progress {
+    margin-top: 16px;
+    font-size: 14px;
+}
+
+@keyframes loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Update banner (shown when new map data is available).
+   [role="alert"] in the selector out-ranks the global alert styling. */
+.update-banner[role="alert"] {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0;
+    padding: 10px 15px;
+    border: 0;
+    border-radius: 0;
+    background: #1a5f7a;
+    color: #fff;
+    font-size: 14px;
+}
+
+.update-banner-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.update-banner-refresh,
+.update-banner-dismiss {
+    padding: 5px 12px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.update-banner-refresh {
+    background: #fff;
+    color: #1a5f7a;
+    border: none;
+    font-weight: bold;
+}
+
+.update-banner-dismiss {
+    background: transparent;
+    color: #fff;
+    border: 1px solid #fff;
+}
+
+.update-banner button:focus {
+    outline-color: #fff;
+}
+
+/* Dark mode support for search page, results, loader and update banner */
 @media (prefers-color-scheme: dark) {
-    .map-groups-list {
+    .search-intro {
+        color: #b4bfcc;
+    }
+
+    .tag-suggestions {
+        border-color: #475569;
+        background: #1e293b;
+    }
+
+    .suggestion-item {
+        border-bottom-color: #334155;
+        background-color: #1e293b;
+        color: #e2e8f0;
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item.selected {
+        background-color: #1d6fd1;
+        color: #fff;
+    }
+
+    ul.search-results-list .search-result-item {
         border-color: #444;
+    }
+
+    ul.search-results-list a.result-link:hover,
+    ul.search-results-list a.result-link:focus {
+        background-color: #2a2a2a;
+        outline-color: #66b3ff;
+    }
+
+    .result-title {
+        color: #66b3ff;
+    }
+
+    .result-meta {
+        color: #bbb;
     }
 
     .map-group-button {
@@ -996,6 +1090,47 @@ article#full_info_article {
 
     .unmapped-button .map-name {
         color: #fbbf24;
+    }
+
+    .loading-spinner {
+        border-color: rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+    }
+
+    .update-banner[role="alert"] {
+        border-bottom: 1px solid #2c7a99;
+        background: #0f3b4d;
+        color: #f1f5f9;
+    }
+
+    .update-banner-refresh {
+        background: #e2e8f0;
+        color: #0f3b4d;
+    }
+
+    .update-banner-dismiss {
+        color: #e2e8f0;
+        border-color: #e2e8f0;
+    }
+}
+
+/* Reduced motion support for search page and loader */
+@media (prefers-reduced-motion: reduce) {
+    .loading-spinner {
+        /* Static fallback: a half-colored ring still reads as "loading" */
+        animation: none;
+        border-right-color: #0066cc;
+    }
+
+    ul.search-results-list a.result-link,
+    .map-group-button {
+        transition: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) and (prefers-color-scheme: dark) {
+    .loading-spinner {
+        border-right-color: #fff;
     }
 }
 
@@ -1092,14 +1227,16 @@ article#full_info_article {
 
 .exits-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
     gap: 8px;
 }
 
 .exit-item {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 2px;
     padding: 6px 10px;
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -1139,7 +1276,25 @@ article#full_info_article {
     outline-offset: 2px;
 }
 
+.exit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.exit-destination {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.25;
+    color: #475569;
+}
+
 .exit-command {
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-weight: 600;
     color: #0066cc;
     font-family: monospace;
@@ -1159,6 +1314,7 @@ article#full_info_article {
 }
 
 .exit-arrow {
+    flex: none;
     margin: 0 4px;
     color: #94a3b8;
     font-weight: 300;
@@ -1166,6 +1322,7 @@ article#full_info_article {
 }
 
 .exit-id {
+    flex: none;
     color: #64748b;
     font-family: monospace;
     font-size: 10px;
@@ -1249,6 +1406,18 @@ article#full_info_article {
     font-size: 12px;
     color: #475569;
     cursor: pointer;
+}
+
+.stringproc-subtab-title {
+    display: inline-block;
+    max-width: 24ch;
+    margin-left: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+    font-family: var(--font-family);
+    font-size: 11px;
 }
 
 .stringproc-subtab:hover {
@@ -1453,6 +1622,10 @@ details summary:hover::before {
     .exit-command {
         color: #66b3ff;
     }
+
+    .exit-destination {
+        color: #94a3b8;
+    }
     
     .exit-id {
         background: #0f172a;
@@ -1601,6 +1774,9 @@ details summary:hover::before {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    /* Reset the global [role="alert"] red border and margin; the live region itself is unchanged */
+    margin: 0;
+    border: 0;
     background: #166534;
     color: white;
     padding: 12px 20px;
@@ -1616,6 +1792,13 @@ details summary:hover::before {
 #copy_link_popup.visible {
     opacity: 1;
     visibility: visible;
+}
+
+@media (prefers-color-scheme: dark) {
+    #copy_link_popup {
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    }
 }
 
 .inline-search-container {
@@ -1774,5 +1957,739 @@ details summary:hover::before {
     
     .inline-tag-row button {
         width: 100%;
+    }
+}
+
+/* ==========================================================================
+   Room page: mobile layout
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Pin only the nav row. display: contents drops the wrapper's own box so the
+       nav sticks relative to the whole page instead of the (tall) header block.
+       The title, highlight controls and map now scroll normally. */
+    #sticky-header {
+        display: contents;
+    }
+
+    #sticky-header > #navigation {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--background-color, #11191f);
+    }
+
+    #navigation_header,
+    #header {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    #navigation_header {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    /* Map pickers share the row; the icon buttons wrap below when space runs out */
+    #map_navigation {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding-bottom: 4px;
+    }
+
+    #map_dropdown,
+    #adjacent_map_dropdown {
+        flex: 1 1 140px;
+        min-width: 0;
+        max-width: none;
+        min-height: 36px;
+        margin-top: 0;
+        padding: 6px 8px;
+        font-size: 13px !important;
+    }
+
+    #search_link {
+        margin-left: auto;
+    }
+
+    #title_row {
+        flex-wrap: wrap;
+        gap: 4px 15px;
+    }
+
+    #room-header {
+        max-width: 100%;
+    }
+
+    #title_row h1 {
+        font-size: 1.5rem;
+        overflow-wrap: anywhere;
+    }
+
+    .room-info {
+        font-size: 16px;
+        overflow-wrap: anywhere;
+    }
+
+    #opacity_toggle {
+        margin-top: 0;
+    }
+
+    #opacity_toggle input {
+        transform: none;
+        margin-right: 4px;
+    }
+
+    #opacity_toggle label {
+        font-size: 13px;
+    }
+
+    /* Highlight controls: label + select pairs that wrap instead of overflowing */
+    #tag_selector {
+        align-items: center;
+        gap: 6px 8px;
+        padding-bottom: 6px;
+    }
+
+    #tag_selector label {
+        flex: 0 0 auto;
+    }
+
+    #tag_dropdown,
+    #location_dropdown {
+        flex: 1 1 110px;
+        min-width: 0;
+        max-width: none;
+        min-height: 36px;
+        padding: 6px 8px;
+        font-size: 14px;
+        line-height: 1.2;
+    }
+
+    #meta_tags_toggle input {
+        transform: none;
+        margin-right: 4px;
+    }
+
+    #tag_selector #meta_tags_toggle label {
+        font-size: 13px;
+    }
+
+    #help_icon {
+        margin-left: 0;
+    }
+
+    #image_wrapper {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    #after_image #updated_at {
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+}
+
+/* Larger touch targets on phones and any coarse-pointer device */
+@media (max-width: 768px), (pointer: coarse) {
+    #search_link,
+    #scroll_top_btn,
+    #copy_link_btn {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 18px;
+    }
+
+    #help_icon {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        min-height: 32px;
+        font-size: 15px;
+    }
+}
+
+/* Dark mode: keyboard focus ring for the icon buttons (the page background is dark) */
+@media (prefers-color-scheme: dark) {
+    #search_link:focus-visible,
+    #scroll_top_btn:focus-visible,
+    #copy_link_btn:focus-visible {
+        outline-color: #66b3ff;
+    }
+}
+
+/* Reduced motion for the room page. Kept at the end of the file so it wins over
+   the transitions declared above. State changes (hover colors, open/closed arrows)
+   still happen; only the movement and easing is removed. */
+@media (prefers-reduced-motion: reduce) {
+    #search_link,
+    #scroll_top_btn,
+    #copy_link_btn,
+    #copy_link_popup,
+    .room-card,
+    .path-link,
+    .tag-badge,
+    .exit-item,
+    .exit-item::after,
+    details summary,
+    details summary::before,
+    .inline-search input,
+    .inline-search button {
+        transition: none;
+    }
+
+    .exit-item:hover,
+    .inline-search button:hover,
+    .inline-search button:active {
+        transform: none;
+    }
+
+    /* The current-room glow stops pulsing; the static glow stays visible.
+       This must sit after the .highlight_box rule that declares the animation. */
+    .highlight_box {
+        animation: none;
+    }
+}
+
+/* ==========================================================================
+   Map legend (above the map)
+   ========================================================================== */
+.map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+    line-height: 1.3;
+    color: #475569;
+}
+
+.map-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    list-style: none;
+}
+
+.map-legend-item[hidden] {
+    display: none;
+}
+
+.map-legend-swatch {
+    flex: none;
+    position: relative;
+    width: 20px;
+    height: 14px;
+}
+
+.map-legend-count,
+.map-legend-total {
+    font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+    .map-legend {
+        color: #cbd5e1;
+    }
+}
+
+
+/* ==========================================================================
+   Search experience: results, map groups, notices, autocomplete details
+   ========================================================================== */
+.search-results-heading {
+    margin: 10px 0 6px;
+    font-size: 18px;
+    scroll-margin-top: 12px;
+}
+
+/* The heading takes programmatic focus after a search; only show a ring for keyboard users */
+.search-results-heading:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.search-notice {
+    margin: 8px 0;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: #f8fafc;
+}
+
+.search-notice p {
+    margin: 0 0 6px;
+}
+
+.search-notice > :last-child {
+    margin-bottom: 0;
+}
+
+.search-notice .search-results-heading {
+    margin-top: 0;
+}
+
+.search-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+/* Secondary (outline) buttons; Pico's default buttons are full-width and filled */
+.search-action-button {
+    display: inline-block;
+    width: auto;
+    margin: 0;
+    padding: 6px 12px;
+    border: 1px solid #0066cc;
+    border-radius: 4px;
+    background-color: transparent;
+    color: #0066cc;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.search-action-button:hover {
+    background-color: #e6f3ff;
+}
+
+/* Map groups: name on the left, count on the right, proportional bar underneath */
+.map-group-button[hidden] {
+    display: none;
+}
+
+.map-group-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.map-group-bar {
+    display: block;
+    height: 4px;
+    margin-top: 6px;
+    border-radius: 2px;
+    background-color: #d9dee5;
+    overflow: hidden;
+}
+
+.map-group-bar-fill {
+    display: block;
+    width: calc(var(--share, 0) * 1%);
+    height: 100%;
+    border-radius: 2px;
+    background-color: #0066cc;
+}
+
+.unmapped-button .map-group-bar-fill {
+    background-color: #b45309;
+}
+
+/* Result rows: one-line snippet, highlighted match, map chip */
+.result-snippet {
+    display: block;
+    margin-bottom: 3px;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: normal;
+    line-height: 1.4;
+    color: #475569;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+mark.result-match {
+    padding: 0 2px;
+    border-radius: 2px;
+    background-color: #fde68a;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.result-chip {
+    display: inline-block;
+    padding: 1px 8px;
+    border: 1px solid #b9d3ee;
+    border-radius: 999px;
+    background-color: #e6f0fa;
+    color: #0b4f8a;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+/* Autocomplete: matched text and per-tag room count */
+.suggestion-match {
+    font-weight: 700;
+}
+
+.suggestion-count {
+    flex: none;
+    color: #64748b;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.suggestion-item:hover .suggestion-count,
+.suggestion-item.selected .suggestion-count {
+    color: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+    .search-notice {
+        border-color: #334155;
+        background-color: #1e293b;
+    }
+
+    .search-action-button {
+        border-color: #66b3ff;
+        color: #66b3ff;
+    }
+
+    .search-action-button:hover {
+        background-color: #1e293b;
+    }
+
+    .map-group-bar {
+        background-color: #444;
+    }
+
+    .map-group-bar-fill {
+        background-color: #66b3ff;
+    }
+
+    .unmapped-button .map-group-bar-fill {
+        background-color: #fbbf24;
+    }
+
+    .result-snippet {
+        color: #cbd5e1;
+    }
+
+    mark.result-match {
+        background-color: #854d0e;
+        color: #fef3c7;
+    }
+
+    .result-chip {
+        border-color: #2f5686;
+        background-color: #1e3a5f;
+        color: #bfdbfe;
+    }
+
+    .suggestion-count {
+        color: #94a3b8;
+    }
+}
+
+/* ==========================================================================
+   Map zoom: toolbar controls and the scrollable viewport
+   ========================================================================== */
+.map-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 16px;
+    padding: 6px 25px 2px;
+}
+
+.map-zoom-controls {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+/* Real <button>s, so the Pico button defaults (full width, filled, bottom margin) are reset */
+.map-zoom-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 32px;
+    min-height: 32px;
+    margin: 0;
+    padding: 2px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: none;
+}
+
+.map-zoom-button:hover {
+    border-color: #94a3b8;
+    background-color: #f1f5f9;
+}
+
+.map-zoom-button[aria-pressed="true"] {
+    border-color: #0066cc;
+    background-color: #0066cc;
+    color: #fff;
+}
+
+.map-zoom-button[aria-pressed="true"]:hover {
+    border-color: #0055aa;
+    background-color: #0055aa;
+}
+
+.map-zoom-button[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.map-zoom-button:focus-visible {
+    outline: 3px solid #0066cc;
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
+.map-zoom-button:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+
+.map-zoom-level {
+    min-width: 7ch;
+    color: #475569;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+/* Zoomed: the wrapper becomes a scrollable viewport and the image is shown at
+   natural size x zoom. --map-width is set from JS. Fit leaves all of this off. */
+#image_wrapper.map-zoomed {
+    max-height: 80vh;
+    max-height: 80dvh;
+    padding: 0;
+    overflow: auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+}
+
+#image_wrapper.map-zoomed #mapimage {
+    width: var(--map-width);
+    max-width: none;
+}
+
+@media (max-width: 768px) {
+    .map-toolbar {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    #image_wrapper.map-zoomed {
+        max-height: 75vh;
+        max-height: 75dvh;
+    }
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .map-zoom-button {
+        min-width: 40px;
+        min-height: 40px;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .map-zoom-button {
+        border-color: #475569;
+        background-color: #1e293b;
+        color: #e2e8f0;
+    }
+
+    .map-zoom-button:hover {
+        border-color: #64748b;
+        background-color: #334155;
+    }
+
+    .map-zoom-button[aria-pressed="true"] {
+        border-color: #1d6fd1;
+        background-color: #1d6fd1;
+        color: #fff;
+    }
+
+    .map-zoom-button[aria-pressed="true"]:hover {
+        border-color: #1a5fb4;
+        background-color: #1a5fb4;
+    }
+
+    .map-zoom-button:focus-visible {
+        outline-color: #66b3ff;
+    }
+
+    .map-zoom-level {
+        color: #cbd5e1;
+    }
+
+    #image_wrapper.map-zoomed {
+        border-color: #334155;
+    }
+}
+
+/* ==========================================================================
+   Loading screen: download progress and error recovery
+   ========================================================================== */
+.loading-bar {
+    width: min(320px, 80vw);
+    height: 6px;
+    margin-top: 14px;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+/* Determinate: the width comes from --progress (0-100), set from app.js */
+.loading-bar-fill {
+    width: calc(var(--progress, 0) * 1%);
+    height: 100%;
+    border-radius: 3px;
+    background-color: #0066cc;
+}
+
+/* Indeterminate (download size unknown): a short bar sweeps across the track */
+.loading-bar-indeterminate .loading-bar-fill {
+    width: 40%;
+    animation: loading-bar-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes loading-bar-sweep {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(250%);
+    }
+}
+
+.loading-detail {
+    margin-top: 8px;
+    color: #475569;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+.loading-note {
+    max-width: 36ch;
+    margin-top: 6px;
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.loading-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: 42ch;
+    padding: 0 16px;
+    text-align: center;
+}
+
+.loading-error[hidden] {
+    display: none;
+}
+
+.loading-error-message {
+    margin: 0;
+    color: #b91c1c;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.loading-error-detail {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.loading-error-detail:empty {
+    display: none;
+}
+
+.loading-retry {
+    width: auto;
+    margin: 8px 0 0;
+    padding: 8px 24px;
+    border: 1px solid #0066cc;
+    border-radius: 6px;
+    background-color: #0066cc;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.loading-retry:hover {
+    border-color: #0055aa;
+    background-color: #0055aa;
+}
+
+@media (prefers-color-scheme: dark) {
+    .loading-bar {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .loading-bar-fill {
+        background-color: #66b3ff;
+    }
+
+    .loading-detail,
+    .loading-note {
+        color: #cbd5e1;
+    }
+
+    .loading-error-message {
+        color: #fca5a5;
+    }
+
+    .loading-error-detail {
+        color: #94a3b8;
+    }
+
+    .loading-retry {
+        border-color: #1d6fd1;
+        background-color: #1d6fd1;
+    }
+
+    .loading-retry:hover {
+        border-color: #1a5fb4;
+        background-color: #1a5fb4;
+    }
+
+    .loading-retry:focus {
+        outline-color: #66b3ff;
+    }
+}
+
+/* Reduced motion: no sweeping bar. An unknown-size download shows a static striped
+   bar across the whole track, with the downloaded size in the text beneath it. */
+@media (prefers-reduced-motion: reduce) {
+    .loading-bar-indeterminate .loading-bar-fill {
+        width: 100%;
+        animation: none;
+        background-image: repeating-linear-gradient(
+            -45deg,
+            rgba(255, 255, 255, 0.45) 0,
+            rgba(255, 255, 255, 0.45) 6px,
+            transparent 6px,
+            transparent 12px
+        );
     }
 }
