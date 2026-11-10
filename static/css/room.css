@@ -814,6 +814,10 @@ article#full_info_article {
 }
 
 .suggestion-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
     padding: 6px 8px;
     border-bottom: 1px solid #eee;
     background-color: #fff;
@@ -870,10 +874,14 @@ ul.search-results-list a.result-link:focus {
 }
 
 .result-meta {
-    display: block;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
     font-size: 12px;
+    font-weight: normal;
     color: #666;
-    line-height: 1.1;
+    line-height: 1.4;
 }
 
 /* Map groups for large result sets (one full-width button per map) */
@@ -916,9 +924,11 @@ ul.search-results-list a.result-link:focus {
 }
 
 .map-count {
-    font-size: 11px;
+    flex: none;
+    font-size: 12px;
+    font-weight: 600;
     color: #666;
-    margin-left: 2px;
+    font-variant-numeric: tabular-nums;
 }
 
 .unmapped-button .map-name {
@@ -2190,5 +2200,195 @@ details summary:hover::before {
     .map-legend {
         padding-left: 10px;
         padding-right: 10px;
+    }
+}
+
+/* ==========================================================================
+   Search experience: results, map groups, notices, autocomplete details
+   ========================================================================== */
+.search-results-heading {
+    margin: 10px 0 6px;
+    font-size: 18px;
+    scroll-margin-top: 12px;
+}
+
+/* The heading takes programmatic focus after a search; only show a ring for keyboard users */
+.search-results-heading:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.search-notice {
+    margin: 8px 0;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: #f8fafc;
+}
+
+.search-notice p {
+    margin: 0 0 6px;
+}
+
+.search-notice > :last-child {
+    margin-bottom: 0;
+}
+
+.search-notice .search-results-heading {
+    margin-top: 0;
+}
+
+.search-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+/* Secondary (outline) buttons; Pico's default buttons are full-width and filled */
+.search-action-button {
+    display: inline-block;
+    width: auto;
+    margin: 0;
+    padding: 6px 12px;
+    border: 1px solid #0066cc;
+    border-radius: 4px;
+    background-color: transparent;
+    color: #0066cc;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.search-action-button:hover {
+    background-color: #e6f3ff;
+}
+
+/* Map groups: name on the left, count on the right, proportional bar underneath */
+.map-group-button[hidden] {
+    display: none;
+}
+
+.map-group-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.map-group-bar {
+    display: block;
+    height: 4px;
+    margin-top: 6px;
+    border-radius: 2px;
+    background-color: #d9dee5;
+    overflow: hidden;
+}
+
+.map-group-bar-fill {
+    display: block;
+    width: calc(var(--share, 0) * 1%);
+    height: 100%;
+    border-radius: 2px;
+    background-color: #0066cc;
+}
+
+.unmapped-button .map-group-bar-fill {
+    background-color: #b45309;
+}
+
+/* Result rows: one-line snippet, highlighted match, map chip */
+.result-snippet {
+    display: block;
+    margin-bottom: 3px;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: normal;
+    line-height: 1.4;
+    color: #475569;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+mark.result-match {
+    padding: 0 2px;
+    border-radius: 2px;
+    background-color: #fde68a;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.result-chip {
+    display: inline-block;
+    padding: 1px 8px;
+    border: 1px solid #b9d3ee;
+    border-radius: 999px;
+    background-color: #e6f0fa;
+    color: #0b4f8a;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+/* Autocomplete: matched text and per-tag room count */
+.suggestion-match {
+    font-weight: 700;
+}
+
+.suggestion-count {
+    flex: none;
+    color: #64748b;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.suggestion-item:hover .suggestion-count,
+.suggestion-item.selected .suggestion-count {
+    color: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+    .search-notice {
+        border-color: #334155;
+        background-color: #1e293b;
+    }
+
+    .search-action-button {
+        border-color: #66b3ff;
+        color: #66b3ff;
+    }
+
+    .search-action-button:hover {
+        background-color: #1e293b;
+    }
+
+    .map-group-bar {
+        background-color: #444;
+    }
+
+    .map-group-bar-fill {
+        background-color: #66b3ff;
+    }
+
+    .unmapped-button .map-group-bar-fill {
+        background-color: #fbbf24;
+    }
+
+    .result-snippet {
+        color: #cbd5e1;
+    }
+
+    mark.result-match {
+        background-color: #854d0e;
+        color: #fef3c7;
+    }
+
+    .result-chip {
+        border-color: #2f5686;
+        background-color: #1e3a5f;
+        color: #bfdbfe;
+    }
+
+    .suggestion-count {
+        color: #94a3b8;
     }
 }
