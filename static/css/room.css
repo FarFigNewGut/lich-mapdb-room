@@ -992,53 +992,109 @@ ul.search-results-list a.result-link:focus-visible {
     }
 }
 
-/* Update banner (shown when new map data is available).
+/* Update toast (shown when new map data is available).
+   A fixed, non-blocking card at the bottom of the screen, so it never covers the
+   sticky nav, the map picker or the map controls at the top of the page.
+   Centred on desktop with left/right 0 + auto margins (no transform, so the
+   entrance animation is free to use one). The z-index sits above page content,
+   the map tooltip (200) and the sticky header (100), and below the help dialog (1000).
    [role="alert"] in the selector out-ranks the global alert styling. */
-.update-banner[role="alert"] {
+.update-toast[role="alert"] {
     position: fixed;
-    top: 0;
     left: 0;
     right: 0;
-    z-index: 10000;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 500;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    margin: 0;
-    padding: 10px 15px;
-    border: 0;
-    border-radius: 0;
+    gap: 10px 16px;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: min(560px, calc(100vw - 32px));
+    margin: 0 auto;
+    padding: 12px 14px 12px 16px;
+    border: 1px solid var(--banner-border);
+    border-radius: 10px;
     background: var(--banner-bg);
+    box-shadow: var(--toast-shadow);
     color: var(--banner-text);
     font-size: 14px;
+    line-height: 1.4;
+    animation: update-toast-in 0.25s ease-out;
 }
 
-.update-banner-actions {
+.update-toast-message {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.update-toast-actions {
     display: flex;
-    gap: 10px;
+    flex: none;
+    gap: 8px;
+    margin-left: auto;
 }
 
-.update-banner-refresh,
-.update-banner-dismiss {
-    padding: 5px 12px;
+/* Real <button>s, so the Pico defaults (full width, bottom margin) are reset */
+.update-toast-refresh,
+.update-toast-dismiss {
+    width: auto;
+    min-height: 32px;
+    margin: 0;
+    padding: 5px 14px;
     cursor: pointer;
-    border-radius: 3px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.2;
+    box-shadow: none;
 }
 
-.update-banner-refresh {
+.update-toast-refresh {
     background: var(--banner-action);
     color: var(--banner-bg);
-    border: none;
+    border: 1px solid var(--banner-action);
     font-weight: bold;
 }
 
-.update-banner-dismiss {
+.update-toast-dismiss {
     background: transparent;
     color: var(--banner-action);
     border: 1px solid var(--banner-action);
 }
 
-.update-banner button:focus-visible {
+.update-toast button:focus-visible {
     outline-color: var(--static-white);
+}
+
+@keyframes update-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Phones: near full width with side margins, clear of the screen edge */
+@media (max-width: 768px) {
+    .update-toast[role="alert"] {
+        left: 12px;
+        right: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        max-width: none;
+        margin: 0;
+    }
+
+    .update-toast-refresh,
+    .update-toast-dismiss {
+        min-height: 40px;
+    }
 }
 
 /* Dark-only overrides: these have no light-theme declaration to turn into a token. */
@@ -1052,14 +1108,15 @@ ul.search-results-list a.result-link:focus-visible {
     .map-group-button:focus-visible {
         outline-color: var(--focus-ring);
     }
-
-    .update-banner[role="alert"] {
-        border-bottom: 1px solid #2c7a99;
-    }
 }
 
 /* Reduced motion support for search page and loader */
 @media (prefers-reduced-motion: reduce) {
+    /* The toast simply appears; no slide or fade */
+    .update-toast[role="alert"] {
+        animation: none;
+    }
+
     .loading-spinner {
         /* Static fallback: a half-colored ring still reads as "loading" */
         animation: none;

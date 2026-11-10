@@ -83,6 +83,7 @@
     --banner-bg: #1a5f7a;
     --banner-action: #ffffff;
     --banner-text: #ffffff;
+    --banner-border: transparent;
     --spinner-head: #0066cc;
     --spinner-track: rgba(0, 0, 0, 0.15);
     --bar-track: rgba(0, 0, 0, 0.15);
@@ -184,6 +185,7 @@
         --banner-bg: #0f3b4d;
         --banner-action: #e2e8f0;
         --banner-text: #f1f5f9;
+        --banner-border: #2c7a99;
         --spinner-head: #ffffff;
         --spinner-track: rgba(255, 255, 255, 0.3);
         --bar-track: rgba(255, 255, 255, 0.2);

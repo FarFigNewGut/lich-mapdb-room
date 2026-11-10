@@ -194,13 +194,13 @@ let lastUpdateCheckAt = 0;
 // updates. Re-check on an hourly timer and whenever the tab regains focus
 // (throttled), and stop once an update has been found.
 async function runUpdateCheck() {
-    if (document.getElementById('update-banner')) {
+    if (document.getElementById('update-toast')) {
         return true;
     }
     lastUpdateCheckAt = Date.now();
     const updateCheck = await checkForUpdates();
     if (updateCheck.hasUpdate) {
-        showUpdateBanner();
+        showUpdateToast();
         return true;
     }
     return false;
@@ -226,29 +226,31 @@ function scheduleUpdateChecks() {
     setTimeout(runUpdateCheck, 5000);
 }
 
-function showUpdateBanner() {
-    if (document.getElementById('update-banner')) return;
+// A bottom toast, not a top bar, so it never covers the nav or map controls.
+// It is inserted without taking focus; role="alert" makes screen readers announce it.
+function showUpdateToast() {
+    if (document.getElementById('update-toast')) return;
     
-    const banner = document.createElement('div');
-    banner.id = 'update-banner';
-    banner.className = 'update-banner';
-    banner.setAttribute('role', 'alert');
-    banner.innerHTML = `
-        <span>Room data has been updated. Refresh to see the latest changes.</span>
-        <div class="update-banner-actions">
-            <button type="button" class="update-banner-refresh">Refresh</button>
-            <button type="button" class="update-banner-dismiss">Dismiss</button>
+    const toast = document.createElement('div');
+    toast.id = 'update-toast';
+    toast.className = 'update-toast';
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <span class="update-toast-message">Room data has been updated. Refresh to see the latest changes.</span>
+        <div class="update-toast-actions">
+            <button type="button" class="update-toast-refresh">Refresh</button>
+            <button type="button" class="update-toast-dismiss">Dismiss</button>
         </div>
     `;
     
-    banner.querySelector('.update-banner-refresh').addEventListener('click', () => {
+    toast.querySelector('.update-toast-refresh').addEventListener('click', () => {
         location.reload();
     });
-    banner.querySelector('.update-banner-dismiss').addEventListener('click', () => {
-        banner.remove();
+    toast.querySelector('.update-toast-dismiss').addEventListener('click', () => {
+        toast.remove();
     });
     
-    document.body.prepend(banner);
+    document.body.append(toast);
 }
 
 document.getElementById('loading-retry').addEventListener('click', () => {
