@@ -1,7 +1,8 @@
-import { getRoomById, getRoomByNumericId, getRoomsOnMap, getRoomsByImage, getMapCategories, getAllRooms, getAllTags } from './data.js';
+import { getRoomById, getRoomByNumericId, getRoomsOnMap, getRoomsByImage, getMapCategories } from './data.js';
 import { navigate } from './router.js';
 import { announceToScreenReader, escapeHtml, getUpdatedAt } from './utils.js';
 import { buildMapDropdown, renderNotFound } from './shell.js';
+import { initTagSearch } from './tag-search.js';
 
 const COMPASS_ORDER = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest', 'up', 'down', 'out'];
 const COMPASS_ALIASES = { n: 'north', ne: 'northeast', e: 'east', se: 'southeast', s: 'south', sw: 'southwest', w: 'west', nw: 'northwest' };
@@ -444,7 +445,7 @@ function buildInlineSearchForms() {
                     <div class="inline-tag-input-wrapper">
                         <input type="text" id="inlineTagInput" placeholder="Start typing a tag..." autocomplete="off"
                                aria-expanded="false" aria-autocomplete="both" role="combobox" aria-controls="inlineTagSuggestions">
-                        <ul id="inlineTagSuggestions" tabindex="0" role="listbox" aria-label="Tag suggestions"></ul>
+                        <ul id="inlineTagSuggestions" class="tag-suggestions" tabindex="0" role="listbox" aria-label="Tag suggestions"></ul>
                     </div>
                     <select id="inlineImageSelect" disabled aria-label="Select a map">
                         <option value="">Select map...</option>
@@ -647,7 +648,7 @@ function initRoomInteractions(room, queryParams) {
         });
     }
 
-    initInlineSearch();
+    initRoomSearchPanel();
     initStringProcTabs();
     
     const searchLink = document.getElementById('search_link');
@@ -1507,9 +1508,7 @@ function navigateToRoom(roomId) {
     navigate(path);
 }
 
-let inlineTagsCache = [];
-
-function initInlineSearch() {
+function initRoomSearchPanel() {
     const basicForm = document.getElementById('inlineBasicSearchForm');
     if (basicForm) {
         basicForm.addEventListener('submit', (e) => {
@@ -1521,237 +1520,16 @@ function initInlineSearch() {
         });
     }
     
-    inlineTagsCache = getAllTags();
-    initInlineTagAutocomplete();
-    initInlineCascadingDropdowns();
-}
-
-function initInlineTagAutocomplete() {
-    const tagInput = document.getElementById('inlineTagInput');
-    const tagSuggestions = document.getElementById('inlineTagSuggestions');
-    let selectedIndex = -1;
-    
-    if (!tagInput || !tagSuggestions) return;
-    
-    tagInput.addEventListener('input', function() {
-        const inputValue = this.value.toLowerCase();
-        resetInlineDropdowns();
-        
-        if (inputValue.length > 0) {
-            const filteredTags = inlineTagsCache.filter(tag =>
-                tag.toLowerCase().includes(inputValue)
-            );
-            
-            if (filteredTags.length > 0) {
-                showInlineSuggestions(filteredTags, tagSuggestions, tagInput);
-                selectedIndex = -1;
-            } else {
-                hideInlineSuggestions(tagSuggestions, tagInput);
-            }
-        } else {
-            hideInlineSuggestions(tagSuggestions, tagInput);
-        }
+    initTagSearch({
+        tagInputId: 'inlineTagInput',
+        suggestionsId: 'inlineTagSuggestions',
+        imageSelectId: 'inlineImageSelect',
+        locationSelectId: 'inlineLocationSelect',
+        submitButtonId: 'inlineTagSearchButton',
+        formId: 'inlineTagSearchForm',
+        optionIdPrefix: 'inline-tag-option',
+        onSubmit: navigateToInlineTaggedRoom
     });
-    
-    tagInput.addEventListener('keydown', function(e) {
-        const isVisible = tagSuggestions.style.display === 'block';
-        if (!isVisible) return;
-        
-        const items = tagSuggestions.querySelectorAll('.inline-suggestion-item');
-        
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-                updateInlineHighlight(items, selectedIndex);
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                selectedIndex = Math.max(selectedIndex - 1, -1);
-                updateInlineHighlight(items, selectedIndex);
-                break;
-            case 'Enter':
-                e.preventDefault();
-                if (selectedIndex >= 0 && selectedIndex < items.length) {
-                    selectInlineTag(items[selectedIndex].textContent);
-                }
-                break;
-            case 'Escape':
-                e.preventDefault();
-                hideInlineSuggestions(tagSuggestions, tagInput);
-                break;
-        }
-    });
-    
-    tagInput.addEventListener('blur', function() {
-        setTimeout(() => {
-            if (document.activeElement !== tagInput && document.activeElement !== tagSuggestions) {
-                hideInlineSuggestions(tagSuggestions, tagInput);
-            }
-        }, 150);
-    });
-}
-
-function showInlineSuggestions(tags, container, input) {
-    container.innerHTML = '';
-    
-    tags.slice(0, 30).forEach((tag, index) => {
-        const li = document.createElement('li');
-        li.textContent = tag;
-        li.className = 'inline-suggestion-item';
-        li.setAttribute('role', 'option');
-        li.setAttribute('id', `inline-tag-option-${index}`);
-        li.setAttribute('aria-selected', 'false');
-        
-        li.addEventListener('click', (e) => {
-            e.preventDefault();
-            selectInlineTag(tag);
-        });
-        
-        container.appendChild(li);
-    });
-    
-    container.style.display = 'block';
-    input.setAttribute('aria-expanded', 'true');
-}
-
-function hideInlineSuggestions(container, input) {
-    container.style.display = 'none';
-    input.setAttribute('aria-expanded', 'false');
-}
-
-function updateInlineHighlight(items, selectedIndex) {
-    items.forEach((item, index) => {
-        if (index === selectedIndex) {
-            item.classList.add('selected');
-            item.setAttribute('aria-selected', 'true');
-        } else {
-            item.classList.remove('selected');
-            item.setAttribute('aria-selected', 'false');
-        }
-    });
-}
-
-function selectInlineTag(tag) {
-    const tagInput = document.getElementById('inlineTagInput');
-    const tagSuggestions = document.getElementById('inlineTagSuggestions');
-    
-    tagInput.value = tag;
-    hideInlineSuggestions(tagSuggestions, tagInput);
-    loadInlineImagesForTag(tag);
-}
-
-function resetInlineDropdowns() {
-    const imageSelect = document.getElementById('inlineImageSelect');
-    const locationSelect = document.getElementById('inlineLocationSelect');
-    const tagSearchButton = document.getElementById('inlineTagSearchButton');
-    
-    imageSelect.innerHTML = '<option value="">Select map...</option>';
-    imageSelect.disabled = true;
-    locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
-    locationSelect.disabled = true;
-    tagSearchButton.disabled = true;
-}
-
-function initInlineCascadingDropdowns() {
-    const imageSelect = document.getElementById('inlineImageSelect');
-    const locationSelect = document.getElementById('inlineLocationSelect');
-    const tagSearchButton = document.getElementById('inlineTagSearchButton');
-    const tagSearchForm = document.getElementById('inlineTagSearchForm');
-    
-    if (!imageSelect) return;
-    
-    imageSelect.addEventListener('change', function() {
-        const selectedImage = this.value;
-        const tagInput = document.getElementById('inlineTagInput');
-        
-        locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
-        locationSelect.disabled = true;
-        
-        if (selectedImage) {
-            loadInlineLocationsForTagAndImage(tagInput.value, selectedImage);
-            tagSearchButton.disabled = false;
-        } else {
-            tagSearchButton.disabled = true;
-        }
-    });
-    
-    if (tagSearchForm) {
-        tagSearchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const tagInput = document.getElementById('inlineTagInput');
-            const tag = tagInput.value;
-            const image = imageSelect.value;
-            const location = locationSelect.value;
-            
-            if (tag && image) {
-                navigateToInlineTaggedRoom(tag, image, location);
-            }
-        });
-    }
-}
-
-function loadInlineImagesForTag(tag) {
-    const imageSelect = document.getElementById('inlineImageSelect');
-    const allRooms = getAllRooms();
-    
-    const imagesWithTag = {};
-    
-    for (const room of allRooms) {
-        if (room.tags?.includes(tag) && room.image) {
-            if (!imagesWithTag[room.image]) {
-                let displayName = room.image;
-                if (room.tags) {
-                    for (const t of room.tags) {
-                        if (t.startsWith('meta:mapname:')) {
-                            displayName = t.replace('meta:mapname:', '');
-                            break;
-                        }
-                    }
-                }
-                imagesWithTag[room.image] = { filename: room.image, display_name: displayName };
-            }
-        }
-    }
-    
-    const images = Object.values(imagesWithTag).sort((a, b) => 
-        a.display_name.localeCompare(b.display_name)
-    );
-    
-    imageSelect.innerHTML = '<option value="">Select map...</option>';
-    images.forEach(imageData => {
-        const option = document.createElement('option');
-        option.value = imageData.filename;
-        option.textContent = imageData.display_name;
-        imageSelect.appendChild(option);
-    });
-    imageSelect.disabled = false;
-}
-
-function loadInlineLocationsForTagAndImage(tag, image) {
-    const locationSelect = document.getElementById('inlineLocationSelect');
-    
-    const locations = new Set();
-    
-    for (const room of getRoomsByImage(image)) {
-        const tagMatch = !tag || room.tags?.includes(tag);
-        
-        if (tagMatch && room.location) {
-            locations.add(room.location);
-        }
-    }
-    
-    const sortedLocations = Array.from(locations).sort();
-    
-    locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
-    sortedLocations.forEach(location => {
-        const option = document.createElement('option');
-        option.value = location;
-        option.textContent = location;
-        locationSelect.appendChild(option);
-    });
-    locationSelect.disabled = false;
 }
 
 function navigateToInlineTaggedRoom(tag, image, location) {

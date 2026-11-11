@@ -11,6 +11,8 @@ let roomsByImage = new Map();
 let allTags = [];
 let mapCategories = [];
 let updatedAtValue = '';
+let mapDisplayNames = null;
+let mapDisplayNamesSource = null;
 
 // onProgress(message, detail): message is always a short status string. While the room
 // data downloads, detail is also passed as { received, total, hadCache }; total is 0 when
@@ -271,6 +273,22 @@ export function getRoomsByImage(imageName) {
 
 export function getAllTags() {
     return allTags;
+}
+
+// Display name from the map's meta:mapname tag, falling back to a cleaned-up filename
+export function getMapDisplayName(image) {
+    if (!mapDisplayNames || mapDisplayNamesSource !== roomData) {
+        mapDisplayNamesSource = roomData;
+        mapDisplayNames = new Map();
+        for (const room of roomData) {
+            if (!room.image || !room.tags || mapDisplayNames.has(room.image)) continue;
+            const nameTag = room.tags.find(tag => tag.startsWith('meta:mapname:'));
+            if (nameTag) {
+                mapDisplayNames.set(room.image, nameTag.replace('meta:mapname:', ''));
+            }
+        }
+    }
+    return mapDisplayNames.get(image) || image.replace(/_/g, ' ').replace(/\.(png|jpg|gif)$/i, '');
 }
 
 export function getMapCategories() {
