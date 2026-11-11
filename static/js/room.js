@@ -21,6 +21,9 @@ let currentRoom = null;
 let sameImageRooms = [];
 let mapResizeObserver = null;
 let mapZoom = 'fit';
+// Which legend category is isolated on the map ('current', 'tag', 'location', 'both') or null for all
+let legendIsolate = null;
+let lastLegendCounts = { tag: 0, location: 0, both: 0 };
 
 // escapeHtml() now escapes quotes itself, so it is attribute-safe; this name is kept
 // so the many existing attribute call sites read clearly
@@ -184,17 +187,23 @@ function buildTagSelector(imageTags, imageLocations) {
         locationOptions += `<option value="${escapeAttr(location)}">${escapeHtml(location)}</option>`;
     }
     
+    // Each .highlight-field keeps its label glued to its control, so wrapping moves whole units
+    // (tag + select, meta-tags toggle, location + select + help) and never splits a label from its select.
     return `
         <div id="tag_selector">
-            <label for="tag_dropdown">Highlight tag:</label>
-            <select id="tag_dropdown" aria-describedby="tag-dropdown-help">${tagOptions}</select>
+            <div class="highlight-field">
+                <label for="tag_dropdown">Highlight tag:</label>
+                <select id="tag_dropdown" aria-describedby="tag-dropdown-help">${tagOptions}</select>
+            </div>
             <span id="meta_tags_toggle">
                 <input type="checkbox" id="show_meta_tags_checkbox">
                 <label for="show_meta_tags_checkbox">Show meta tags</label>
             </span>
-            <label for="location_dropdown">Highlight location:</label>
-            <select id="location_dropdown" aria-describedby="location-dropdown-help">${locationOptions}</select>
-            <button id="help_icon" type="button" aria-label="Show help for room highlighting" tabindex="0">?</button>
+            <div class="highlight-field">
+                <label for="location_dropdown">Highlight location:</label>
+                <select id="location_dropdown" aria-describedby="location-dropdown-help">${locationOptions}</select>
+                <button id="help_icon" type="button" aria-label="Show help for room highlighting" tabindex="0">?</button>
+            </div>
             <div id="tag-dropdown-help" class="sr-only">Select a tag to highlight all rooms on this map that have that tag</div>
             <div id="location-dropdown-help" class="sr-only">Select a location to highlight all rooms in that specific area of the map</div>
         </div>
@@ -266,23 +275,35 @@ function buildMapLegend() {
     return `
         <ul id="map_legend" class="map-legend" aria-label="Map highlight legend">
             <li class="map-legend-item">
-                <span class="map-legend-swatch highlight_box_example" aria-hidden="true"></span>
-                <span>Current room</span>
+                <button type="button" id="legend_current_btn" class="map-legend-toggle" data-legend-kind="current" aria-pressed="false"
+                        title="Show only the current room. Click again to show all.">
+                    <span class="map-legend-swatch highlight_box_example" aria-hidden="true"></span>
+                    <span>Current room</span>
+                </button>
             </li>
             <li class="map-legend-item" id="legend_tag" hidden>
-                <span class="map-legend-swatch tag_highlight_box_example" aria-hidden="true"></span>
-                <span id="legend_tag_label">Tag</span>
-                <span id="legend_tag_count" class="map-legend-count"></span>
+                <button type="button" id="legend_tag_btn" class="map-legend-toggle" data-legend-kind="tag" aria-pressed="false"
+                        title="Show only these rooms. Click again to show all.">
+                    <span class="map-legend-swatch tag_highlight_box_example" aria-hidden="true"></span>
+                    <span id="legend_tag_label">Tag</span>
+                    <span id="legend_tag_count" class="map-legend-count"></span>
+                </button>
             </li>
             <li class="map-legend-item" id="legend_location" hidden>
-                <span class="map-legend-swatch location_highlight_box_example" aria-hidden="true"></span>
-                <span id="legend_location_label">Location</span>
-                <span id="legend_location_count" class="map-legend-count"></span>
+                <button type="button" id="legend_location_btn" class="map-legend-toggle" data-legend-kind="location" aria-pressed="false"
+                        title="Show only these rooms. Click again to show all.">
+                    <span class="map-legend-swatch location_highlight_box_example" aria-hidden="true"></span>
+                    <span id="legend_location_label">Location</span>
+                    <span id="legend_location_count" class="map-legend-count"></span>
+                </button>
             </li>
             <li class="map-legend-item" id="legend_both" hidden>
-                <span class="map-legend-swatch both_highlight_box_example" aria-hidden="true"></span>
-                <span>Tag + location</span>
-                <span id="legend_both_count" class="map-legend-count"></span>
+                <button type="button" id="legend_both_btn" class="map-legend-toggle" data-legend-kind="both" aria-pressed="false"
+                        title="Show only these rooms. Click again to show all.">
+                    <span class="map-legend-swatch both_highlight_box_example" aria-hidden="true"></span>
+                    <span>Tag + location</span>
+                    <span id="legend_both_count" class="map-legend-count"></span>
+                </button>
             </li>
             <li class="map-legend-item map-legend-total" id="legend_total" hidden></li>
         </ul>
@@ -630,6 +651,7 @@ function initRoomInteractions(room, queryParams) {
         }
         watchMapResize(room);
         initMapZoom(room);
+        initMapLegend();
     }
     
     const helpIcon = document.getElementById('help_icon');
@@ -1001,6 +1023,8 @@ function highlightRooms() {
     const selectedTag = document.getElementById('tag_dropdown')?.value || '';
     const selectedLocation = document.getElementById('location_dropdown')?.value || '';
     
+    // A new selection starts from "show all"; resizes call renderHighlightBoxes directly and keep the filter
+    setLegendIsolate(null, { announce: false });
     const counts = renderHighlightBoxes(selectedTag, selectedLocation);
     
     if (!selectedTag && !selectedLocation) {
@@ -1122,12 +1146,73 @@ function updateMapLegend(selectedTag, selectedLocation, counts) {
         if (labelEl && entry.label) labelEl.textContent = entry.label;
     }
     
+    lastLegendCounts = { ...counts };
+    
+    // If the isolated category no longer has a legend entry, go back to showing everything
+    if (legendIsolate && legendIsolate !== 'current' && document.getElementById(`legend_${legendIsolate}`)?.hidden) {
+        setLegendIsolate(null, { announce: false });
+    }
+    
     const totalEl = document.getElementById('legend_total');
     if (totalEl) {
         const total = counts.tag + counts.location + counts.both;
         totalEl.hidden = !(selectedTag || selectedLocation);
         totalEl.textContent = `${total} ${total === 1 ? 'room' : 'rooms'} highlighted`;
     }
+}
+
+// ----- Legend isolation -----
+// Clicking a legend entry shows only that category of highlight box. This only sets a state class
+// on #image_wrapper (legend-isolate-*); CSS hides the other categories. Boxes are never recomputed,
+// so the filter survives resizes and zoom changes, and the current-room box stays visible unless
+// it is the isolated entry.
+
+const LEGEND_KINDS = ['current', 'tag', 'location', 'both'];
+
+function getLegendKindLabel(kind) {
+    const hasBoth = document.getElementById('legend_both')?.hidden === false;
+    switch (kind) {
+        case 'tag': return hasBoth ? 'tag-only' : 'tag';
+        case 'location': return hasBoth ? 'location-only' : 'location';
+        case 'both': return 'tag + location';
+        default: return 'current room';
+    }
+}
+
+function setLegendIsolate(kind, { announce = true } = {}) {
+    const next = LEGEND_KINDS.includes(kind) ? kind : null;
+    const wrapper = document.getElementById('image_wrapper');
+    const changed = next !== legendIsolate;
+    legendIsolate = next;
+    
+    if (wrapper) {
+        LEGEND_KINDS.forEach(k => wrapper.classList.toggle(`legend-isolate-${k}`, k === next));
+    }
+    document.querySelectorAll('.map-legend-toggle').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.legendKind === next));
+    });
+    
+    if (!announce || !changed) return;
+    if (!next) {
+        announceToScreenReader('Showing all highlighted rooms');
+    } else if (next === 'current') {
+        announceToScreenReader('Showing only the current room');
+    } else {
+        announceToScreenReader(`Showing only ${getLegendKindLabel(next)} rooms (${lastLegendCounts[next]})`);
+    }
+}
+
+function initMapLegend() {
+    legendIsolate = null;
+    const legend = document.getElementById('map_legend');
+    if (!legend) return;
+    
+    legend.addEventListener('click', (event) => {
+        const button = event.target.closest('.map-legend-toggle');
+        if (!button) return;
+        const kind = button.dataset.legendKind;
+        setLegendIsolate(legendIsolate === kind ? null : kind);
+    });
 }
 
 // The map image is now fluid, so boxes must follow it when the viewport changes
