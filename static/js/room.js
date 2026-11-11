@@ -9,6 +9,13 @@ const COMPASS_ALIASES = { n: 'north', ne: 'northeast', e: 'east', se: 'southeast
 // Zoom steps as a fraction of the image's natural size; 'fit' is the responsive default
 const MAP_ZOOM_STEPS = [0.2, 0.35, 0.5, 0.75, 1, 1.5, 2, 3];
 
+// Inline SVG icons for the nav buttons. They draw with currentColor, so they follow the theme
+// and the button's hover/focus states, and are hidden from screen readers (the buttons have labels).
+const SVG_ATTRS = 'class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"';
+const ICON_SEARCH = `<svg ${SVG_ATTRS}><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>`;
+const ICON_SCROLL_TOP = `<svg ${SVG_ATTRS}><path d="M5 4h14"></path><path d="M12 20V9"></path><path d="M6 14l6-6 6 6"></path></svg>`;
+const ICON_COPY_LINK = `<svg ${SVG_ATTRS}><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"></path><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"></path></svg>`;
+
 let currentRoom = null;
 let sameImageRooms = [];
 let mapResizeObserver = null;
@@ -90,7 +97,12 @@ function buildRoomHTML(room, queryParams) {
     const imageTags = collectImageTags(sameImageRooms);
     const imageLocations = collectImageLocations(sameImageRooms);
     
+    // Layout: .room-page is one column below 1100px. At 1100px and up, rooms with a map become two
+    // panes (map on the left, details on the right) purely through CSS; the DOM order here is
+    // also the single-column reading order: nav, title, map controls, map, details. The nav is the only
+    // sticky bar; in two-pane mode the map pane sticks below it.
     return `
+        <div class="room-page${room.image ? ' has-map' : ''}">
         <a href="#main-content" class="skip-link">Skip to main content</a>
         <a href="#navigation" class="skip-link">Skip to navigation</a>
         <a href="#search_section" class="skip-link">Skip to search</a>
@@ -101,35 +113,40 @@ function buildRoomHTML(room, queryParams) {
                     <div id="map_navigation">
                         ${buildMapDropdown(mapCategories)}
                         ${adjacentMaps.length ? buildAdjacentMapDropdown(adjacentMaps) : ''}
-                    <button type="button" id="search_link" title="Search for another room" aria-label="Search for another room">&#128269;</button>
-                    <button type="button" id="scroll_top_btn" title="Scroll to top" aria-label="Scroll to top of page">&#128285;</button>
-                    <button type="button" id="copy_link_btn" title="Copy link for this room" aria-label="Copy link for this room">&#128279;</button>
+                    <button type="button" id="search_link" title="Search for another room" aria-label="Search for another room">${ICON_SEARCH}</button>
+                    <button type="button" id="scroll_top_btn" title="Scroll to top" aria-label="Scroll to top of page">${ICON_SCROLL_TOP}</button>
+                    <button type="button" id="copy_link_btn" title="Copy link for this room" aria-label="Copy link for this room">${ICON_COPY_LINK}</button>
                     </div>
                 </div>
             </nav>
-            
-            <header id="header" role="banner">
-                <div id="title_row">
-                    <div id="room-header">
-                        <h1>${escapeHtml(room.title[0])}</h1>
-                        <p class="room-info">${room.id} | u${room.uid?.[0] || 'N/A'}${room.location ? ` | ${escapeHtml(room.location)}` : ''}</p>
-                    </div>
-                    ${room.image ? `
-                    <div id="opacity_toggle">
-                        <input type="checkbox" id="opacity_checkbox">
-                        <label for="opacity_checkbox" title="Fade the map so highlighted rooms stand out">Dim map</label>
-                    </div>
-                    ` : ''}
-                </div>
-                ${room.image && imageTags.length ? buildTagSelector(imageTags, imageLocations) : ''}
-            </header>
         </div>
         
         <div id="copy_link_popup" role="alert" aria-live="polite">Link copied to clipboard!</div>
         
         ${room.image ? buildHelpPopup() : ''}
-        ${room.image ? buildMapToolbar() : ''}
-        ${room.image ? buildMapSection(room) : ''}
+        
+        <div class="room-layout">
+        <header id="header" role="banner">
+            <div id="title_row">
+                <div id="room-header">
+                    <h1>${escapeHtml(room.title[0])}</h1>
+                    <p class="room-info">${room.id} | u${room.uid?.[0] || 'N/A'}${room.location ? ` | ${escapeHtml(room.location)}` : ''}</p>
+                </div>
+            </div>
+        </header>
+        ${room.image ? `
+        <div class="room-map-pane">
+            <div class="map-controls">
+                <div id="opacity_toggle">
+                    <input type="checkbox" id="opacity_checkbox">
+                    <label for="opacity_checkbox" title="Fade the map so highlighted rooms stand out">Dim map</label>
+                </div>
+                ${imageTags.length ? buildTagSelector(imageTags, imageLocations) : ''}
+            </div>
+            ${buildMapToolbar()}
+            ${buildMapSection(room)}
+        </div>
+        ` : ''}
         
         <main id="main-content" role="main">
             <div id="after_image">
@@ -145,6 +162,8 @@ function buildRoomHTML(room, queryParams) {
                 </footer>
             </div>
         </main>
+        </div>
+        </div>
     `;
 }
 
