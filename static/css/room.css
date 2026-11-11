@@ -1,10 +1,18 @@
-/* Accessibility improvements */
+/* ==========================================================================
+   Lich Map Room Database: main stylesheet
+   Load order: pico.min.css, tokens.css, room.css.
+   Colours come from tokens.css (var(--...)), so light and dark themes are
+   switched there. Rules keep their original cascade order; sections below
+   are labelled, and later sections intentionally refine earlier ones.
+
+   BASE: accessibility helpers, focus ring, headings, lists, landmarks
+   ========================================================================== */
 .skip-link {
     position: absolute;
     top: -40px;
     left: 6px;
-    background: #000;
-    color: #fff;
+    background: var(--static-black);
+    color: var(--static-white);
     padding: 8px;
     text-decoration: none;
     z-index: 10000;
@@ -34,44 +42,56 @@
 }
 
 .room-info {
-    font-size: 18px;
-    color: inherit;
     margin: 0 2px 0 0;
     padding-bottom: 3px;
-    font-weight: bold;
-    text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 400;
 }
 
-/* Enhanced focus indicators */
-*:focus {
-    outline: 2px solid #0066cc;
+/* Enhanced focus indicators.
+   :focus-visible shows the ring for keyboard users (and for text fields, where browsers
+   always treat focus as visible) but not after a mouse click on a button or link.
+   The ring is the accent indigo (8:1 on the page); in dark mode --focus-ring becomes a lighter indigo. */
+*:focus-visible {
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
 }
 
-button:focus,
-input:focus,
-select:focus,
-a:focus {
-    outline: 3px solid #0066cc;
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+    outline: 3px solid var(--focus-ring);
     outline-offset: 2px;
+}
+
+/* Pico also paints a glow on :focus; keep it for keyboard use only so a mouse click on a button leaves no ring */
+button:focus:not(:focus-visible),
+[role="button"]:focus:not(:focus-visible) {
+    box-shadow: none;
 }
 
 .room-tags {
     font-size: 12px;
-    color: #666;
+    color: var(--text-meta-dim);
     font-style: italic;
 }
 
-/* Fix heading styles to be lighter and restore original hierarchy */
+/* Headings: Fraunces for titles and section headings (600 is the heavier face
+   that ships; 400 is available for lighter uses). No text shadow. */
 h1 {
     padding: 0;
     margin: 0;
-    text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
-    font-weight: bold;
+    font-family: var(--font-display);
+    font-weight: 600;
 }
 
 h2 {
+    font-family: var(--font-display);
     font-size: 16px;
+    font-weight: 600;
     margin: 5px 0 5px 0;
     color: inherit;
 }
@@ -79,6 +99,8 @@ h2 {
 h3 {
     padding: 0;
     margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
     color: inherit;
 }
 
@@ -87,7 +109,7 @@ h3 {
     margin-top: 5px;
     margin-bottom: 5px;
     margin-left: 25px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--border-control);
     padding-bottom: 5px;
     color: inherit;
 }
@@ -95,7 +117,7 @@ h3 {
 #nearby-rooms-heading + p {
     margin-bottom: 5px;
     margin-left: 25px;
-    color: #555;
+    color: var(--text-secondary);
 }
 
 ul[role="list"] {
@@ -114,7 +136,7 @@ ul[role="list"] a {
 }
 
 ul[role="list"] a:hover,
-ul[role="list"] a:focus {
+ul[role="list"] a:focus-visible {
     text-decoration: underline;
 }
 
@@ -151,18 +173,18 @@ footer {
 
 /* High contrast and visual accessibility improvements */
 @media (prefers-contrast: high) {
-    *:focus {
-        outline: 4px solid #000;
+    *:focus-visible {
+        outline: 4px solid var(--static-black);
         outline-offset: 2px;
     }
 
-    button:focus,
-    input:focus,
-    select:focus,
-    a:focus {
-        outline: 4px solid #000;
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    a:focus-visible {
+        outline: 4px solid var(--static-black);
         outline-offset: 2px;
-        background-color: #ffff00;
+        background-color: var(--static-yellow);
     }
 }
 
@@ -173,16 +195,20 @@ footer {
     }
 }
 
+/* ==========================================================================
+   ROOM PAGE: info text, tables, status messages
+   ========================================================================== */
 /* Better contrast for room information */
+.room-ids,
 .room-location {
     font-size: 14px;
-    color: #666;
+    color: var(--text-meta);
     margin: 5px 0 0 0;
     font-weight: bold;
 }
 
 th[scope="row"] {
-    background-color: #f5f5f5;
+    background-color: var(--surface-legacy);
     font-weight: bold;
     text-align: left;
     padding: 8px;
@@ -206,34 +232,42 @@ table caption {
 }
 
 [role="alert"] {
-    background-color: #fef2f2;
-    border-color: #dc2626;
-    color: #dc2626;
+    background-color: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
 }
 
 [role="status"] {
-    background-color: #fffbeb;
-    border-color: #d97706;
-    color: #92400e;
+    background-color: var(--warning-bg);
+    border-color: var(--warning-border);
+    color: var(--warning-text);
 }
 
 /* Loading states */
 select[disabled] {
-    background-color: #f9f9f9;
-    color: #666;
+    background-color: var(--surface-disabled);
+    color: var(--text-disabled);
     cursor: not-allowed;
 }
 
+/* ==========================================================================
+   MAP: image, wrapper, current-room box, highlight boxes
+   ========================================================================== */
 .highlight_box {
     padding: 0;
     position: absolute;
     z-index: 9;
+    pointer-events: none;
 }
 
 #mapimage {
     max-width: 100%;
     z-index: 1;
     position: relative;
+}
+
+/* Only rooms other than the current one are clickable; JS adds this class while the pointer is over one */
+#mapimage.map-room-hover {
     cursor: pointer;
 }
 
@@ -244,22 +278,12 @@ select[disabled] {
     }
 }
 
-/* Only fade on hover where hover really exists, so a tap on a phone doesn't leave the map faded */
-@media (hover: hover) {
-    #mapimage:hover {
-        -webkit-filter: opacity(20%);
-        -moz-filter: opacity(20%);
-        -o-filter: opacity(20%);
-        -ms-filter: opacity(20%);
-        filter: opacity(20%);
-    }
-}
 #image_wrapper {
     padding: 1px 25px 5px 25px;
     position: relative;
 }
 
-#image_div { 
+#image_div {
     padding: 0;
 }
 
@@ -311,7 +335,8 @@ article#full_info_article {
 
 #full_info_code {
     white-space: pre-wrap;
-    font-size: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
 }
 
 #updated_at {
@@ -319,6 +344,9 @@ article#full_info_article {
     margin: 5px 25px;
 }
 
+/* ==========================================================================
+   ROOM PAGE: sticky header, tag and location selectors, Dim map, nav icons
+   ========================================================================== */
 #sticky-header {
     position: sticky;
     top: 0;
@@ -334,7 +362,17 @@ article#full_info_article {
 }
 
 #header {
-	padding: 0 25px 0 25px;
+    padding: 0 25px 0 25px;
+}
+
+/* Dim map toggle and the tag/location highlight selectors: they act on the map, so they sit
+   directly above it (in the left pane at 1100px and up). */
+.map-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 6px 25px 0;
 }
 
 #title_row {
@@ -347,75 +385,108 @@ article#full_info_article {
 
 #title_row h1 {
     margin: 0;
-    text-shadow: 2px 2px 0px rgba(70, 80, 90, 0.8), 3px 3px 6px rgba(70, 80, 90, 0.6);
-    font-weight: bold;
+    font-weight: 600;
 }
 
+/* #tag_selector only groups the highlight controls in the markup. display: contents lets its
+   children (the two .highlight-field units and the meta-tags toggle) flow in the same wrapping
+   row as the Dim map pill, so wrapping happens between whole units. */
 #tag_selector {
-    padding-top: 0;
-    padding-bottom: 2px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 8px;
+    display: contents;
+}
+
+/* A label and its control are one unit: the label never wraps away from its select. The help
+   button lives inside the location unit, so it can't be left on a line of its own. */
+.highlight-field {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
 }
 
 #tag_selector label {
-    margin-right: 5px;
+    flex: none;
+    margin: 0;
     font-weight: bold;
     font-size: 13px;
     line-height: 1;
+    white-space: nowrap;
 }
 
 #meta_tags_toggle {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    align-self: center;
-    gap: 2px;
+    flex: none;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 #meta_tags_toggle input {
+    flex: none;
+    width: 16px;
+    height: 16px;
     margin: 0;
-    transform: scale(0.7);
 }
 
 #tag_selector #meta_tags_toggle label {
     margin-right: 0;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: normal;
 }
 
 #tag_dropdown,
 #location_dropdown {
-    padding: 3px;
-    margin-bottom: 0px;
-    font-size: 12px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    flex: 0 1 200px;
+    width: auto;
     min-width: 120px;
     max-width: 200px;
-    line-height: 1;
-    vertical-align: baseline;
+    height: 32px;
+    margin: 0;
+    /* right padding leaves room for Pico's dropdown arrow */
+    padding: 3px 28px 3px 8px;
+    font-size: 13px;
+    border: 1px solid var(--border-control);
+    border-radius: 6px;
+    line-height: 1.2;
 }
 
+/* "Dim map": an explicit pill-shaped switch that fades the whole map image */
 #opacity_toggle {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 2px;
-    margin-top: 20px;
-    flex-shrink: 0;
-    margin-left: 0;
+    flex: none;
+    gap: 8px;
+    box-sizing: border-box;
+    width: fit-content;
+    min-height: 32px;
+    margin: 0;
+    padding: 0 12px 0 10px;
+    border: 1px solid var(--border-control);
+    border-radius: 999px;
+    white-space: nowrap;
 }
 
 #opacity_toggle input {
+    flex: none;
+    width: 16px;
+    height: 16px;
     margin: 0;
-    transform: scale(0.7);
+    cursor: pointer;
 }
 
 #opacity_toggle label {
-    font-size: 11px;
-    font-weight: normal;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
     line-height: 1;
+    cursor: pointer;
+}
+
+#opacity_toggle:has(input:checked) {
+    border-color: var(--accent);
+    background-color: var(--accent-tint);
 }
 
 #map_navigation {
@@ -430,9 +501,9 @@ article#full_info_article {
 
 #map_dropdown,
 #adjacent_map_dropdown {
-    padding: 2px 4px;
-    font-size: 11px !important;
-    border: 1px solid #ccc;
+    padding: 3px 6px;
+    font-size: 13px !important;
+    border: 1px solid var(--border-control);
     border-radius: 3px;
     max-width: 200px;
     line-height: 1.2;
@@ -472,11 +543,20 @@ article#full_info_article {
     background: transparent;
 }
 
+/* SVG icons in the nav buttons draw with currentColor; clicks go to the button, not the svg */
+.nav-icon {
+    display: block;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
 /* Visible keyboard focus (the base rule removes the mouse-click ring) */
 #search_link:focus-visible,
 #scroll_top_btn:focus-visible,
 #copy_link_btn:focus-visible {
-    outline: 3px solid #0066cc;
+    outline: 3px solid var(--focus-ring);
     outline-offset: 1px;
     box-shadow: none;
 }
@@ -484,30 +564,17 @@ article#full_info_article {
 #map_dropdown optgroup,
 #adjacent_map_dropdown optgroup {
     font-weight: bold;
-    font-size: 12px !important;
-    background-color: #e6f3ff;
-    color: #0066cc;
+    font-size: 13px !important;
+    background-color: var(--surface-tint);
+    color: var(--accent);
     padding: 2px 4px;
 }
 
 #map_dropdown option,
 #adjacent_map_dropdown option {
     font-weight: normal;
-    font-size: 11px !important;
-    color: #334155 !important;
-}
-
-@media (prefers-color-scheme: dark) {
-    #map_dropdown optgroup,
-    #adjacent_map_dropdown optgroup {
-        background-color: #1e293b;
-        color: #66b3ff;
-    }
-
-    #map_dropdown option,
-    #adjacent_map_dropdown option {
-        color: hsl(205deg, 16%, 77%) !important;
-    }
+    font-size: 13px !important;
+    color: var(--select-option-text) !important;
 }
 
 #mapimage.opacity_active {
@@ -545,9 +612,9 @@ article#full_info_article {
 
 .highlight_box,
 .highlight_box_example {
-    border: 3px solid #f59e0b;
-    background-color: rgba(245, 158, 11, 0.3);
-    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), 0 0 8px 3px rgba(245, 158, 11, 0.8);
+    border: 3px solid var(--hl-current);
+    background-color: rgba(var(--hl-current-rgb), 0.3);
+    box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), 0 0 8px 3px rgba(var(--hl-current-rgb), 0.8);
 }
 
 .highlight_box {
@@ -556,34 +623,33 @@ article#full_info_article {
 
 .tag_highlight_box,
 .tag_highlight_box_example {
-    border: 3px solid #0f766e;
-    background-color: rgba(20, 184, 166, 0.25);
-    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.85);
+    border: 3px solid var(--hl-tag);
+    background-color: rgba(var(--hl-tag-rgb), 0.25);
+    box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), inset 0 0 0 1px var(--hl-inner);
 }
 
 .location_highlight_box,
 .location_highlight_box_example {
-    border: 3px dashed #6d28d9;
-    background-color: rgba(124, 58, 237, 0.2);
-    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.85);
+    border: 3px dashed var(--hl-location);
+    background-color: rgba(var(--hl-location-rgb), 0.2);
+    box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), inset 0 0 0 1px var(--hl-inner);
 }
 
 .both_highlight_box,
 .both_highlight_box_example {
-    border: 3px solid #0f766e;
-    background-color: rgba(20, 184, 166, 0.22);
-    box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45),
-        inset 0 0 0 1px #fff, inset 0 0 0 3px #6d28d9, inset 0 0 0 4px #fff;
+    border: 3px solid var(--hl-tag);
+    background-color: rgba(var(--hl-tag-rgb), 0.22);
+    box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), inset 0 0 0 1px var(--static-white), inset 0 0 0 3px var(--hl-location), inset 0 0 0 4px var(--static-white);
 }
 
 @keyframes room-glow {
     0%,
     100% {
-        box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), 0 0 4px 1px rgba(245, 158, 11, 0.55);
+        box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), 0 0 4px 1px rgba(var(--hl-current-rgb), 0.55);
     }
 
     50% {
-        box-shadow: 0 0 0 1px #fff, 0 0 0 2px rgba(0, 0, 0, 0.45), 0 0 12px 5px rgba(245, 158, 11, 0.95);
+        box-shadow: 0 0 0 1px var(--static-white), 0 0 0 2px var(--hl-halo), 0 0 12px 5px rgba(var(--hl-current-rgb), 0.95);
     }
 }
 
@@ -596,9 +662,13 @@ article#full_info_article {
     }
 }
 
+/* ==========================================================================
+   HELP POPUP: highlight legend dialog
+   ========================================================================== */
 #help_icon {
-    background-color: #0066cc;
-    color: white;
+    flex: none;
+    background-color: var(--accent-fill);
+    color: var(--static-white);
     border: none;
     border-radius: 50%;
     width: 24px;
@@ -609,8 +679,7 @@ article#full_info_article {
     font-size: 13px;
     font-weight: bold;
     cursor: pointer;
-    margin-left: 5px;
-    margin-bottom: 0px;
+    margin: 0;
     user-select: none;
     padding: 0;
     min-width: 24px;
@@ -618,7 +687,7 @@ article#full_info_article {
 }
 
 #help_icon:hover {
-    background-color: #004d99;
+    background-color: var(--accent-fill-hover);
 }
 
 #help_popup {
@@ -636,8 +705,8 @@ article#full_info_article {
 
 /* Restore smaller help popup */
 #help_popup_content {
-    background-color: #11191f;
-    color: white;
+    background-color: var(--static-ink);
+    color: var(--static-white);
     padding: 15px;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -652,7 +721,7 @@ article#full_info_article {
     right: 12px;
     font-size: 16px;
     cursor: pointer;
-    color: #ccc;
+    color: var(--static-grey-300);
     width: 20px;
     height: 20px;
     display: flex;
@@ -664,9 +733,12 @@ article#full_info_article {
 }
 
 #help_close:hover,
-#help_close:focus {
-    color: white;
-    outline: 2px solid #fff;
+#help_close:focus-visible {
+    color: var(--static-white);
+}
+
+#help_close:focus-visible {
+    outline: 2px solid var(--static-white);
 }
 
 #help_popup h2 {
@@ -687,76 +759,301 @@ article#full_info_article {
     position: relative;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .room-ids,
-    .room-location {
-        color: #ccc;
-    }
-
-    .room-tags {
-        color: #aaa;
-    }
-
-    th[scope="row"] {
-        background-color: #2a2a2a;
-        color: #fff;
-    }
-
-    [role="alert"] {
-        background-color: #2d1b1b;
-        border-color: #ef4444;
-        color: #fecaca;
-    }
-
-    [role="status"] {
-        background-color: #2d2416;
-        border-color: #f59e0b;
-        color: #fcd34d;
-    }
-
-    select[disabled] {
-        background-color: #0f172a;
-        color: #94a3b8;
-    }
-}
-
-/* Search page layout and forms.
-   Selectors prefixed with #main-content are intentional: Pico styles inputs with
-   input:not([type=...]) chains that a plain class cannot out-rank. */
+/* ==========================================================================
+   SEARCH PAGE: layout, forms, autocomplete, results, map groups
+   ========================================================================== */
+/* Search page layout.
+   Selectors prefixed with #main-content are intentional: Pico styles inputs, selects and
+   buttons with long :not() chains that a plain class cannot out-rank. */
 .search-main {
-    padding: 15px;
-}
-
-.search-intro {
-    margin-bottom: 15px;
-    color: #475569;
-    font-size: 14px;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 15px 20px;
 }
 
 #updated_at.search-footer {
-    margin-top: 20px;
+    margin-top: 28px;
+    margin-left: 0;
+    margin-right: 0;
 }
 
-.search-forms {
-    max-width: 600px;
-    padding: 10px;
-    box-sizing: border-box;
+/* Results sit in a centred reading column under the centred hero */
+#search-results {
+    max-width: 860px;
+    margin: 0 auto;
 }
 
-.search-basic-form {
-    margin-bottom: 8px;
+/* ----- Hero: wordmark, big search box, example chips ----- */
+/* One block for both search modes: the hero and the tag panel share this width,
+   so the input row, the example chips and the panel edges line up. */
+.search-deck {
+    max-width: 820px;
+    margin: 0 auto;
 }
 
-.search-label {
-    display: block;
-    margin-bottom: 3px;
+.search-hero {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 36px 0 18px;
+    text-align: center;
+    animation: atlas-rise 0.45s ease-out backwards;
+}
+
+.search-hero-compact {
+    padding: 12px 0 8px;
+}
+
+.search-eyebrow {
+    margin: 0 0 8px;
+    color: var(--copper);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+h1.search-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.1;
+}
+
+.search-hero-compact h1.search-title {
+    font-size: clamp(1.5rem, 3.5vw, 2rem);
+}
+
+.search-intro {
+    margin: 12px 0 22px;
+    color: var(--text-intro);
+    font-size: 17px;
+}
+
+.search-hero-form {
+    margin: 0;
+    text-align: left;
+}
+
+.search-hero-compact .search-hero-form {
+    margin-top: 12px;
+}
+
+.search-hero-label {
+    margin: 0 0 6px 2px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.search-hero-row {
+    display: flex;
+    gap: 10px;
+}
+
+#main-content .search-hero-input {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 18px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+#main-content .search-hero-button {
+    flex: none;
+    width: auto;
+    margin: 0;
+    padding: 0 28px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.search-examples {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.search-examples-label {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Real <button>s, so the Pico defaults (full width, filled, bottom margin) are reset */
+#main-content .example-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    width: auto;
+    margin: 0;
+    padding: 5px 12px;
+    border: 1px solid var(--border-control);
+    border-radius: 999px;
+    background-color: var(--surface);
+    box-shadow: none;
+    color: var(--text);
     font-size: 14px;
-    font-weight: bold;
+    font-weight: 500;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.search-divider {
-    margin: 8px 0;
+#main-content .example-chip:hover {
+    border-color: var(--accent);
+    background-color: var(--surface-tint);
+}
+
+.example-chip-mono .example-chip-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.example-chip-kind {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+/* ----- Section headings shared by the map browser and the tag panel ----- */
+h2.search-section-heading {
+    margin: 0;
+    font-size: 22px;
+}
+
+/* ----- Map browser: tiles grouped by category ----- */
+.map-browser {
+    margin-top: 28px;
+}
+
+.map-browser-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 20px;
+    margin-bottom: 8px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.map-filter {
+    flex: 0 1 280px;
+}
+
+#main-content .map-filter-input {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.map-category {
+    margin: 0;
+    padding: 2px 0 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.map-category-name {
+    color: var(--text);
+}
+
+.map-category-count {
+    margin-left: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* ul/a prefixes beat the generic ul[role="list"] rules near the top of this file */
+ul.map-tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 8px;
+    margin: 4px 0 6px;
+    padding: 0;
+    list-style: none;
+}
+
+ul.map-tile-grid li {
+    margin: 0;
+    line-height: 1.3;
+    list-style: none;
+}
+
+ul.map-tile-grid a.map-tile {
+    display: block;
+    height: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background-color: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.3;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+ul.map-tile-grid a.map-tile:hover {
+    border-color: var(--accent);
+    background-color: var(--surface-tint);
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.map-filter-empty {
+    margin: 14px 0 0;
+    color: var(--text-muted);
+}
+
+.map-filter-empty[hidden] {
+    display: none;
+}
+
+/* ----- Secondary panel: find a tag on a map ----- */
+/* Quieter than the hero: a panel-tinted strip with a small heading. With results showing it sits
+   below them (standalone), so it carries its own width and top margin. */
+.tag-panel {
+    max-width: 820px;
+    margin: 32px auto 0;
+    padding: 14px 18px 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background-color: var(--surface-panel);
+}
+
+.search-deck .tag-panel {
+    margin-top: 14px;
+}
+
+.tag-panel-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 14px;
+    margin-bottom: 12px;
+}
+
+h2.tag-panel-heading {
+    font-size: 18px;
+}
+
+.tag-panel-hint {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
 }
 
 .search-fieldset {
@@ -765,8 +1062,21 @@ article#full_info_article {
     border: none;
 }
 
+.tag-search-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+}
+
+/* Tag input spans the full top row; map / location / button sit below it,
+   so the three narrower controls aren't cramped at the deck's width. */
+.tag-search-grid .search-field-tag {
+    grid-column: 1 / -1;
+}
+
 .search-field {
-    margin-bottom: 4px;
+    margin: 0;
     padding-left: 0;
 }
 
@@ -774,21 +1084,67 @@ article#full_info_article {
     position: relative;
 }
 
-#main-content .search-input,
-#main-content .search-select {
+#main-content .tag-panel .search-input,
+#main-content .tag-panel .search-select {
     width: 100%;
-    padding: 6px;
+    height: auto;
+    margin: 0;
+    padding: 9px 12px;
     font-size: 14px;
     box-sizing: border-box;
 }
 
-#main-content .search-input-spaced {
-    margin-bottom: 4px;
+/* Leave room for the native dropdown arrow so the option text never runs under it. */
+#main-content .tag-panel .search-select {
+    padding-right: 32px;
 }
 
-.search-button {
-    padding: 6px 12px;
+#main-content .tag-panel-button {
+    width: auto;
+    margin: 0;
+    padding: 9px 20px;
     font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* The suggestions list is inside the grid cell; keep it as wide as the tag box */
+.search-field-tag .tag-suggestions {
+    margin-top: 0;
+}
+
+@media (max-width: 768px) {
+    .search-main {
+        padding: 10px 12px;
+    }
+
+    .search-hero {
+        padding-top: 20px;
+    }
+
+    .search-hero-row {
+        flex-direction: column;
+    }
+
+    #main-content .search-hero-button {
+        padding: 13px 28px;
+    }
+
+    .tag-panel {
+        padding: 14px;
+    }
+
+    .tag-search-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #main-content .tag-panel-button {
+        width: 100%;
+    }
+
+    ul.map-tile-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
 }
 
 /* Tag autocomplete dropdown (search page) */
@@ -805,8 +1161,8 @@ article#full_info_article {
     overflow-y: auto;
     list-style: none;
     font-size: 14px;
-    border: 1px solid #ccc;
-    background: #fff;
+    border: 1px solid var(--border-legacy);
+    background: var(--surface);
 }
 
 .tag-suggestions.visible {
@@ -819,17 +1175,17 @@ article#full_info_article {
     justify-content: space-between;
     gap: 12px;
     padding: 6px 8px;
-    border-bottom: 1px solid #eee;
-    background-color: #fff;
-    color: #334155;
+    border-bottom: 1px solid var(--border-legacy-row);
+    background-color: var(--surface);
+    color: var(--text);
     list-style: none;
     cursor: pointer;
 }
 
 .suggestion-item:hover,
 .suggestion-item.selected {
-    background-color: #0066cc;
-    color: #fff;
+    background-color: var(--accent-fill);
+    color: var(--static-white);
 }
 
 /* Compact and accessible search results styling.
@@ -843,7 +1199,7 @@ ul.search-results-list {
 ul.search-results-list .search-result-item {
     margin-bottom: 8px;
     padding: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-result);
     border-radius: 4px;
 }
 
@@ -857,17 +1213,20 @@ ul.search-results-list a.result-link {
 }
 
 ul.search-results-list a.result-link:hover,
-ul.search-results-list a.result-link:focus {
-    background-color: #f0f8ff;
+ul.search-results-list a.result-link:focus-visible {
+    background-color: var(--surface-link-hover);
     text-decoration: none;
-    outline: 2px solid #0066cc;
+}
+
+ul.search-results-list a.result-link:focus-visible {
+    outline: 2px solid var(--static-accent);
     outline-offset: 1px;
 }
 
 .result-title {
     display: block;
     font-weight: bold;
-    color: #0066cc;
+    color: var(--accent);
     font-size: 14px;
     line-height: 1.2;
     margin-bottom: 2px;
@@ -880,7 +1239,7 @@ ul.search-results-list a.result-link:focus {
     gap: 4px 10px;
     font-size: 12px;
     font-weight: normal;
-    color: #666;
+    color: var(--text-meta);
     line-height: 1.4;
 }
 
@@ -898,9 +1257,9 @@ ul.search-results-list a.result-link:focus {
     width: 100%;
     padding: 8px 12px;
     margin: 0;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-legacy-button);
     border-radius: 4px;
-    background-color: #f5f5f5;
+    background-color: var(--surface-legacy);
     color: inherit;
     text-align: left;
     cursor: pointer;
@@ -911,30 +1270,36 @@ ul.search-results-list a.result-link:focus {
 }
 
 .map-group-button:hover,
-.map-group-button:focus {
-    background-color: #e6f3ff;
-    border-color: #0066cc;
-    outline: 2px solid #0066cc;
+.map-group-button:focus-visible {
+    background-color: var(--surface-tint-hover);
+    border-color: var(--accent);
+}
+
+.map-group-button:focus-visible {
+    outline: 2px solid var(--static-accent);
     outline-offset: 1px;
 }
 
 .map-name {
     font-weight: bold;
-    color: #0066cc;
+    color: var(--accent);
 }
 
 .map-count {
     flex: none;
     font-size: 12px;
     font-weight: 600;
-    color: #666;
+    color: var(--text-meta);
     font-variant-numeric: tabular-nums;
 }
 
 .unmapped-button .map-name {
-    color: #92400e;
+    color: var(--unmapped-text);
 }
 
+/* ==========================================================================
+   LOADING SCREEN AND UPDATE BANNER
+   ========================================================================== */
 /* Fullscreen loading screen.
    The #loading-screen resets neutralize the global [role="status"] box
    (border, padding, margin) that would otherwise frame the loader. */
@@ -961,8 +1326,8 @@ ul.search-results-list a.result-link:focus {
 .loading-spinner {
     width: 48px;
     height: 48px;
-    border: 4px solid rgba(0, 0, 0, 0.15);
-    border-top-color: #0066cc;
+    border: 4px solid var(--spinner-track);
+    border-top-color: var(--spinner-head);
     border-radius: 50%;
     animation: loading-spin 1s linear infinite;
 }
@@ -978,148 +1343,135 @@ ul.search-results-list a.result-link:focus {
     }
 }
 
-/* Update banner (shown when new map data is available).
+/* Update toast (shown when new map data is available).
+   A fixed, non-blocking card at the bottom of the screen, so it never covers the
+   sticky nav, the map picker or the map controls at the top of the page.
+   Centred on desktop with left/right 0 + auto margins (no transform, so the
+   entrance animation is free to use one). The z-index sits above page content,
+   the map tooltip (200) and the sticky header (100), and below the help dialog (1000).
    [role="alert"] in the selector out-ranks the global alert styling. */
-.update-banner[role="alert"] {
+.update-toast[role="alert"] {
     position: fixed;
-    top: 0;
     left: 0;
     right: 0;
-    z-index: 10000;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 500;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    margin: 0;
-    padding: 10px 15px;
-    border: 0;
-    border-radius: 0;
-    background: #1a5f7a;
-    color: #fff;
+    gap: 10px 16px;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: min(560px, calc(100vw - 32px));
+    margin: 0 auto;
+    padding: 12px 14px 12px 16px;
+    border: 1px solid var(--banner-border);
+    border-radius: 10px;
+    background: var(--banner-bg);
+    box-shadow: var(--toast-shadow);
+    color: var(--banner-text);
     font-size: 14px;
+    line-height: 1.4;
+    animation: update-toast-in 0.25s ease-out;
 }
 
-.update-banner-actions {
+.update-toast-message {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.update-toast-actions {
     display: flex;
-    gap: 10px;
+    flex: none;
+    gap: 8px;
+    margin-left: auto;
 }
 
-.update-banner-refresh,
-.update-banner-dismiss {
-    padding: 5px 12px;
+/* Real <button>s, so the Pico defaults (full width, bottom margin) are reset */
+.update-toast-refresh,
+.update-toast-dismiss {
+    width: auto;
+    min-height: 32px;
+    margin: 0;
+    padding: 5px 14px;
     cursor: pointer;
-    border-radius: 3px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.2;
+    box-shadow: none;
 }
 
-.update-banner-refresh {
-    background: #fff;
-    color: #1a5f7a;
-    border: none;
+.update-toast-refresh {
+    background: var(--banner-action);
+    color: var(--banner-bg);
+    border: 1px solid var(--banner-action);
     font-weight: bold;
 }
 
-.update-banner-dismiss {
+.update-toast-dismiss {
     background: transparent;
-    color: #fff;
-    border: 1px solid #fff;
+    color: var(--banner-action);
+    border: 1px solid var(--banner-action);
 }
 
-.update-banner button:focus {
-    outline-color: #fff;
+.update-toast button:focus-visible {
+    outline-color: var(--static-white);
 }
 
-/* Dark mode support for search page, results, loader and update banner */
+@keyframes update-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Phones: near full width with side margins, clear of the screen edge */
+@media (max-width: 768px) {
+    .update-toast[role="alert"] {
+        left: 12px;
+        right: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        max-width: none;
+        margin: 0;
+    }
+
+    .update-toast-refresh,
+    .update-toast-dismiss {
+        min-height: 40px;
+    }
+}
+
+/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
 @media (prefers-color-scheme: dark) {
-    .search-intro {
-        color: #b4bfcc;
-    }
-
-    .tag-suggestions {
-        border-color: #475569;
-        background: #1e293b;
-    }
-
-    .suggestion-item {
-        border-bottom-color: #334155;
-        background-color: #1e293b;
-        color: #e2e8f0;
-    }
-
-    .suggestion-item:hover,
-    .suggestion-item.selected {
-        background-color: #1d6fd1;
-        color: #fff;
-    }
-
-    ul.search-results-list .search-result-item {
-        border-color: #444;
-    }
-
     ul.search-results-list a.result-link:hover,
-    ul.search-results-list a.result-link:focus {
-        background-color: #2a2a2a;
-        outline-color: #66b3ff;
-    }
-
-    .result-title {
-        color: #66b3ff;
-    }
-
-    .result-meta {
-        color: #bbb;
-    }
-
-    .map-group-button {
-        background-color: #2a2a2a;
-        border-color: #555;
+    ul.search-results-list a.result-link:focus-visible {
+        outline-color: var(--focus-ring);
     }
 
     .map-group-button:hover,
-    .map-group-button:focus {
-        background-color: #333;
-        border-color: #66b3ff;
-        outline-color: #66b3ff;
-    }
-
-    .map-name {
-        color: #66b3ff;
-    }
-
-    .map-count {
-        color: #bbb;
-    }
-
-    .unmapped-button .map-name {
-        color: #fbbf24;
-    }
-
-    .loading-spinner {
-        border-color: rgba(255, 255, 255, 0.3);
-        border-top-color: #fff;
-    }
-
-    .update-banner[role="alert"] {
-        border-bottom: 1px solid #2c7a99;
-        background: #0f3b4d;
-        color: #f1f5f9;
-    }
-
-    .update-banner-refresh {
-        background: #e2e8f0;
-        color: #0f3b4d;
-    }
-
-    .update-banner-dismiss {
-        color: #e2e8f0;
-        border-color: #e2e8f0;
+    .map-group-button:focus-visible {
+        outline-color: var(--focus-ring);
     }
 }
 
 /* Reduced motion support for search page and loader */
 @media (prefers-reduced-motion: reduce) {
+    /* The toast simply appears; no slide or fade */
+    .update-toast[role="alert"] {
+        animation: none;
+    }
+
     .loading-spinner {
         /* Static fallback: a half-colored ring still reads as "loading" */
         animation: none;
-        border-right-color: #0066cc;
+        border-right-color: var(--spinner-head);
     }
 
     ul.search-results-list a.result-link,
@@ -1128,15 +1480,12 @@ ul.search-results-list a.result-link:focus {
     }
 }
 
-@media (prefers-reduced-motion: reduce) and (prefers-color-scheme: dark) {
-    .loading-spinner {
-        border-right-color: #fff;
-    }
-}
-
+/* ==========================================================================
+   ROOM PAGE: room card, exits, StringProc tabs, details, inline search
+   ========================================================================== */
 .room-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 24px;
     margin-left: 25px;
@@ -1154,28 +1503,28 @@ ul.search-results-list a.result-link:focus {
     font-size: 16px;
     line-height: 1.7;
     margin-bottom: 24px;
-    color: #334155;
+    color: var(--text);
 }
 
 .room-paths {
     margin-bottom: 20px;
-    color: #475569;
+    color: var(--text-secondary-dim);
     font-size: 15px;
     padding: 12px 16px;
-    background-color: #f8fafc;
+    background-color: var(--surface-inset);
     border-radius: 8px;
-    border: 1px solid #f1f5f9;
+    border: 1px solid var(--border-faint-card);
 }
 
 .path-link {
-    color: #0066cc;
+    color: var(--accent);
     text-decoration: none;
     font-weight: 600;
     transition: color 0.2s;
 }
 
 .path-link:hover {
-    color: #0055aa;
+    color: var(--accent-text-hover);
     text-decoration: underline;
 }
 
@@ -1190,9 +1539,9 @@ ul.search-results-list a.result-link:focus {
     display: inline-flex;
     align-items: center;
     padding: 4px 12px;
-    background-color: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    background-color: var(--surface-chip);
+    color: var(--text-secondary-bright);
+    border: 1px solid var(--surface-chip-hover);
     border-radius: 9999px;
     font-size: 13px;
     font-weight: 600;
@@ -1201,9 +1550,9 @@ ul.search-results-list a.result-link:focus {
 }
 
 .tag-badge:hover {
-    background-color: #e2e8f0;
-    color: #1e293b;
-    border-color: #cbd5e1;
+    background-color: var(--surface-chip-hover);
+    color: var(--text-chip-hover);
+    border-color: var(--border-chip-hover);
 }
 
 .exits-section {
@@ -1211,17 +1560,18 @@ ul.search-results-list a.result-link:focus {
     margin-left: 25px;
     margin-right: 25px;
     padding-bottom: 25px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border);
 }
 
 .exits-heading {
+    font-family: var(--font-family);
     font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    color: #64748b;
+    color: var(--copper);
     margin-bottom: 20px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border);
     padding-bottom: 8px;
 }
 
@@ -1238,11 +1588,11 @@ ul.search-results-list a.result-link:focus {
     justify-content: center;
     gap: 2px;
     padding: 6px 10px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 6px;
     text-decoration: none;
-    color: #334155;
+    color: var(--text-soft);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -1255,12 +1605,12 @@ ul.search-results-list a.result-link:focus {
     left: 0;
     height: 3px;
     width: 0%;
-    background-color: #0066cc;
+    background-color: var(--static-accent);
     transition: width 0.2s ease;
 }
 
 .exit-item:hover {
-    border-color: #cbd5e1;
+    border-color: var(--border-accent-hover);
     transform: translateY(-2px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     text-decoration: none;
@@ -1270,9 +1620,9 @@ ul.search-results-list a.result-link:focus {
     width: 100%;
 }
 
-.exit-item:focus {
-    border-color: #0066cc;
-    outline: 2px solid #0066cc;
+.exit-item:focus-visible {
+    border-color: var(--accent);
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
 }
 
@@ -1289,16 +1639,16 @@ ul.search-results-list a.result-link:focus {
     overflow: hidden;
     font-size: 12px;
     line-height: 1.25;
-    color: #475569;
+    color: var(--text-secondary-dim);
 }
 
 .exit-command {
     min-width: 0;
     overflow-wrap: anywhere;
-    font-weight: 600;
-    color: #0066cc;
-    font-family: monospace;
-    font-size: 11px;
+    font-weight: 400;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 13px;
 }
 
 .exit-item-compact {
@@ -1306,27 +1656,27 @@ ul.search-results-list a.result-link:focus {
 }
 
 .exit-item-compact .exit-command {
-    font-size: 11px;
+    font-size: 13px;
 }
 
 .exit-item-compact .exit-id {
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .exit-arrow {
     flex: none;
     margin: 0 4px;
-    color: #94a3b8;
+    color: var(--text-faint);
     font-weight: 300;
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .exit-id {
     flex: none;
-    color: #64748b;
-    font-family: monospace;
-    font-size: 10px;
-    background: #f1f5f9;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--surface-code);
     padding: 1px 4px;
     border-radius: 3px;
 }
@@ -1340,10 +1690,10 @@ ul.search-results-list a.result-link:focus {
 .exits-tab {
     display: inline-block;
     padding: 4px 10px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-right: none;
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--surface-control);
+    color: var(--text-muted);
     font-size: 14px;
     font-weight: 500;
     text-transform: uppercase;
@@ -1356,27 +1706,27 @@ ul.search-results-list a.result-link:focus {
 }
 
 .exits-tab:last-child {
-    border-right: 1px solid #cbd5e1;
+    border-right: 1px solid var(--border-control);
     border-radius: 0 3px 3px 0;
 }
 
 .exits-tab:hover {
-    background: #e2e8f0;
-    color: #334155;
+    background: var(--surface-hover);
+    color: var(--text);
 }
 
 .exits-tab[aria-selected="true"] {
-    background: #0066cc;
-    color: white;
-    border-color: #0066cc;
+    background: var(--accent-selected);
+    color: var(--static-white);
+    border-color: var(--accent-selected);
 }
 
 .exits-tab:last-child[aria-selected="true"] {
-    border-right-color: #0066cc;
+    border-right-color: var(--accent-selected);
 }
 
-.exits-tab:focus {
-    outline: 2px solid #0066cc;
+.exits-tab:focus-visible {
+    outline: 2px solid var(--focus-ring);
     outline-offset: 1px;
     z-index: 1;
     position: relative;
@@ -1384,9 +1734,9 @@ ul.search-results-list a.result-link:focus {
 
 .stringproc-panel {
     padding: 6px 10px;
-    background: #f8fafc;
+    background: var(--surface-panel);
     border-radius: 4px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
 }
 
 .stringproc-subtabs {
@@ -1399,12 +1749,12 @@ ul.search-results-list a.result-link:focus {
 .stringproc-subtab {
     display: inline-block;
     padding: 3px 8px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 3px;
-    background: #f1f5f9;
-    font-family: monospace;
+    background: var(--surface-control);
+    font-family: var(--font-mono);
     font-size: 12px;
-    color: #475569;
+    color: var(--text-secondary-bright);
     cursor: pointer;
 }
 
@@ -1417,29 +1767,29 @@ ul.search-results-list a.result-link:focus {
     white-space: nowrap;
     vertical-align: bottom;
     font-family: var(--font-family);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .stringproc-subtab:hover {
-    background: #e2e8f0;
-    border-color: #94a3b8;
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
 }
 
 .stringproc-subtab[aria-selected="true"] {
-    background: #0066cc;
-    color: white;
-    border-color: #0066cc;
+    background: var(--accent-selected);
+    color: var(--static-white);
+    border-color: var(--accent-selected);
 }
 
-.stringproc-subtab:focus {
-    outline: 2px solid #0066cc;
+.stringproc-subtab:focus-visible {
+    outline: 2px solid var(--focus-ring);
     outline-offset: 1px;
 }
 
 .stringproc-code-container {
     overflow-y: auto;
     border-radius: 3px;
-    background: #1e1e1e;
+    background: var(--static-code-bg);
 }
 
 .stringproc-code-container pre,
@@ -1447,15 +1797,16 @@ ul.search-results-list a.result-link:focus {
     margin: 0 !important;
     padding: 6px !important;
     border-radius: 3px !important;
-    background: #1e1e1e !important;
+    background: var(--static-code-bg) !important;
 }
 
 .stringproc-code-container code,
 .stringproc-code-container code[class*="language-"],
 .stringproc-code-container pre[class*="language-"] code {
-    font-size: 10px !important;
+    font-family: var(--font-mono);
+    font-size: 12px !important;
     font-weight: 400 !important;
-    line-height: 1.3 !important;
+    line-height: 1.4 !important;
     background: transparent !important;
 }
 
@@ -1483,7 +1834,7 @@ ul.search-results-list a.result-link:focus {
 details summary {
     cursor: pointer;
     font-weight: 600;
-    color: #475569;
+    color: var(--text-secondary-dim);
     padding: 8px 0;
     user-select: none;
     transition: color 0.2s;
@@ -1500,7 +1851,7 @@ details summary::before {
     margin-right: 8px;
     font-size: 0.8em;
     transition: transform 0.2s;
-    color: #94a3b8;
+    color: var(--text-faint);
 }
 
 details[open] summary::before {
@@ -1508,11 +1859,11 @@ details[open] summary::before {
 }
 
 details summary:hover {
-    color: #0066cc;
+    color: var(--accent);
 }
 
 details summary:hover::before {
-    color: #0066cc;
+    color: var(--accent);
 }
 
 .inline-search-section {
@@ -1520,7 +1871,7 @@ details summary:hover::before {
     margin-left: 25px;
     margin-right: 25px;
     padding-top: 25px;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--border);
 }
 
 .inline-search {
@@ -1533,7 +1884,7 @@ details summary:hover::before {
 .inline-search input {
     flex-grow: 1;
     padding: 10px 16px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 6px;
     font-size: 16px;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -1541,14 +1892,14 @@ details summary:hover::before {
 }
 
 .inline-search input:focus {
-    border-color: #0066cc;
-    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus-glow);
 }
 
 .inline-search button {
     padding: 10px 24px;
-    background-color: #0066cc;
-    color: white;
+    background-color: var(--static-accent);
+    color: var(--static-white);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -1559,7 +1910,7 @@ details summary:hover::before {
 }
 
 .inline-search button:hover {
-    background-color: #0055aa;
+    background-color: var(--accent-fill-hover-lift);
     transform: translateY(-1px);
 }
 
@@ -1567,163 +1918,11 @@ details summary:hover::before {
     transform: translateY(0);
 }
 
+/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
 @media (prefers-color-scheme: dark) {
-    .room-card {
-        background: #1e293b;
-        border-color: #334155;
-    }
-    
-    .room-description {
-        color: #e2e8f0;
-    }
-    
-    .room-paths {
-        color: #94a3b8;
-        background-color: #0f172a;
-        border-color: #1e293b;
-    }
-    
-    .path-link {
-        color: #66b3ff;
-    }
-    
-    .path-link:hover {
-        color: #99ccff;
-    }
-    
-    .tag-badge {
-        background-color: #334155;
-        color: #e2e8f0;
-        border-color: #475569;
-    }
-    
-    .tag-badge:hover {
-        background-color: #475569;
-        color: #fff;
-        border-color: #64748b;
-    }
-
-    .exits-heading {
-        color: #94a3b8;
-        border-bottom-color: #334155;
-    }
-    
-    .exit-item {
-        background: #1e293b;
-        border-color: #334155;
-        color: #cbd5e1;
-    }
-    
-    .exit-item:hover, .exit-item:focus {
-        background-color: #334155;
-        border-color: #66b3ff;
-    }
-    
-    .exit-command {
-        color: #66b3ff;
-    }
-
-    .exit-destination {
-        color: #94a3b8;
-    }
-    
-    .exit-id {
-        background: #0f172a;
-        color: #94a3b8;
-    }
-    
-    .exits-section {
-        border-bottom-color: #334155;
-    }
-    
-    .exits-tab {
-        background: #1e293b;
-        border-color: #475569;
-        color: #94a3b8;
-    }
-    
-    .exits-tab:last-child {
-        border-right-color: #475569;
-    }
-    
-    .exits-tab:hover {
-        color: #e2e8f0;
-        background: #334155;
-    }
-    
-    .exits-tab[aria-selected="true"] {
-        background: #3399ff;
-        border-color: #3399ff;
-        color: white;
-    }
-    
-    .exits-tab:last-child[aria-selected="true"] {
-        border-right-color: #3399ff;
-    }
-    
-    .exits-tab:focus {
-        outline-color: #66b3ff;
-    }
-    
-    .stringproc-panel {
-        background: #1e293b;
-        border-color: #334155;
-    }
-    
-    .stringproc-subtab {
-        background: #1e293b;
-        border-color: #475569;
-        color: #e2e8f0;
-    }
-    
-    .stringproc-subtab:hover {
-        background: #334155;
-        border-color: #64748b;
-    }
-    
-    .stringproc-subtab[aria-selected="true"] {
-        background: #3399ff;
-        border-color: #3399ff;
-        color: white;
-    }
-    
-    .stringproc-subtab:focus {
-        outline-color: #66b3ff;
-    }
-
-    .inline-search-section {
-        border-top-color: #334155;
-    }
-    
-    .inline-search input {
-        background-color: #1e293b;
-        border-color: #475569;
-        color: #fff;
-    }
-
-    .inline-search input:focus {
-        border-color: #66b3ff;
-        box-shadow: 0 0 0 3px rgba(102, 179, 255, 0.1);
-    }
-    
-    .inline-search button {
-        background-color: #0066cc;
-    }
-    
-    .inline-search button:hover {
-        background-color: #3399ff;
-    }
-
-    details summary {
-        color: #94a3b8;
-    }
-
-    details summary:hover {
-        color: #66b3ff;
-    }
-
-    details summary:hover::before {
-        color: #66b3ff;
+    .exit-item:hover,
+    .exit-item:focus-visible {
+        background-color: var(--surface-hover);
     }
 }
 
@@ -1731,23 +1930,29 @@ details summary:hover::before {
     .collapsibles-row {
         flex-direction: column;
     }
-    
+
     .exits-grid {
         grid-template-columns: 1fr;
     }
-    
-    .room-card, .exits-section, .inline-search-section {
+
+    .room-card,
+    .exits-section,
+    .inline-search-section {
         margin-left: 10px;
         margin-right: 10px;
     }
 
-    #nearby_rooms_div, #full_info_div {
+    #nearby_rooms_div,
+    #full_info_div {
         padding-left: 10px;
     }
 }
 
+/* ==========================================================================
+   ROOM PAGE: nearby rooms and copy-link toast
+   ========================================================================== */
 .nearby-rooms-content {
-    font-size: 10px;
+    font-size: 13px;
     padding: 5px;
 }
 
@@ -1762,11 +1967,11 @@ details summary:hover::before {
 }
 
 .nearby-rooms-list a {
-    font-size: 10px;
+    font-size: 13px;
 }
 
 .nearby-location {
-    font-size: 10px;
+    font-size: 12px;
 }
 
 #copy_link_popup {
@@ -1777,13 +1982,13 @@ details summary:hover::before {
     /* Reset the global [role="alert"] red border and margin; the live region itself is unchanged */
     margin: 0;
     border: 0;
-    background: #166534;
-    color: white;
+    background: var(--static-success);
+    color: var(--static-white);
     padding: 12px 20px;
     border-radius: 8px;
     font-size: 14px;
     z-index: 10000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--toast-shadow);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s, visibility 0.2s;
@@ -1794,13 +1999,16 @@ details summary:hover::before {
     visibility: visible;
 }
 
+/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
 @media (prefers-color-scheme: dark) {
     #copy_link_popup {
         border: 1px solid rgba(255, 255, 255, 0.25);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
     }
 }
 
+/* ==========================================================================
+   ROOM PAGE: inline tag search (autocomplete, selects)
+   ========================================================================== */
 .inline-search-container {
     max-width: 800px;
 }
@@ -1808,7 +2016,7 @@ details summary:hover::before {
 .inline-search-divider {
     margin: 5px 0;
     font-size: 13px;
-    color: #64748b;
+    color: var(--text-muted);
     font-weight: bold;
 }
 
@@ -1832,21 +2040,21 @@ details summary:hover::before {
 .inline-tag-input-wrapper input {
     width: 100%;
     padding: 8px 12px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 6px;
     font-size: 14px;
     box-sizing: border-box;
 }
 
+/* Shown/hidden through the shared .tag-suggestions / .visible classes (tag-search.js) */
 #inlineTagSuggestions {
-    display: none;
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
     z-index: 1000;
-    background: white;
-    border: 1px solid #cbd5e1;
+    background: var(--surface);
+    border: 1px solid var(--border-control);
     border-top: none;
     border-radius: 0 0 6px 6px;
     max-height: 180px;
@@ -1857,38 +2065,35 @@ details summary:hover::before {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.inline-suggestion-item {
+#inlineTagSuggestions .suggestion-item {
     padding: 8px 12px;
-    cursor: pointer;
     font-size: 13px;
-    color: #334155;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-faint);
 }
 
-.inline-suggestion-item:hover,
-.inline-suggestion-item.selected {
-    background-color: #0066cc;
-    color: white;
+#inlineTagSuggestions .suggestion-item:hover,
+#inlineTagSuggestions .suggestion-item.selected {
+    background-color: var(--accent-selected);
 }
 
 .inline-tag-row select {
     padding: 8px 12px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 6px;
     font-size: 14px;
     min-width: 140px;
-    background: white;
+    background: var(--surface);
 }
 
 .inline-tag-row select:disabled {
-    background: #f8fafc;
-    color: #94a3b8;
+    background: var(--surface-inset);
+    color: var(--border-hover);
 }
 
 .inline-tag-row button {
     padding: 8px 16px;
-    background-color: #0066cc;
-    color: white;
+    background-color: var(--static-accent);
+    color: var(--static-white);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -1898,63 +2103,25 @@ details summary:hover::before {
 }
 
 .inline-tag-row button:disabled {
-    background-color: #94a3b8;
+    background-color: var(--text-faint);
     cursor: not-allowed;
 }
 
 .inline-tag-row button:not(:disabled):hover {
-    background-color: #0055aa;
-}
-
-@media (prefers-color-scheme: dark) {
-    .inline-search-divider {
-        color: #94a3b8;
-    }
-    
-    .inline-tag-input-wrapper input {
-        background-color: #1e293b;
-        border-color: #475569;
-        color: #e2e8f0;
-    }
-    
-    #inlineTagSuggestions {
-        background: #1e293b;
-        border-color: #475569;
-    }
-    
-    .inline-suggestion-item {
-        color: #e2e8f0;
-        border-bottom-color: #334155;
-    }
-    
-    .inline-suggestion-item:hover,
-    .inline-suggestion-item.selected {
-        background-color: #3399ff;
-    }
-    
-    .inline-tag-row select {
-        background-color: #1e293b;
-        border-color: #475569;
-        color: #e2e8f0;
-    }
-    
-    .inline-tag-row select:disabled {
-        background: #0f172a;
-        color: #64748b;
-    }
+    background-color: var(--static-accent-hover);
 }
 
 @media (max-width: 768px) {
     .inline-tag-row {
         flex-direction: column;
     }
-    
+
     .inline-tag-input-wrapper,
     .inline-tag-row select {
         width: 100%;
         min-width: unset;
     }
-    
+
     .inline-tag-row button {
         width: 100%;
     }
@@ -1965,8 +2132,8 @@ details summary:hover::before {
    ========================================================================== */
 @media (max-width: 768px) {
     /* Pin only the nav row. display: contents drops the wrapper's own box so the
-       nav sticks relative to the whole page instead of the (tall) header block.
-       The title, highlight controls and map now scroll normally. */
+     nav sticks relative to the whole page instead of the (tall) header block.
+     The title, highlight controls and map now scroll normally. */
     #sticky-header {
         display: contents;
     }
@@ -2026,7 +2193,7 @@ details summary:hover::before {
     }
 
     .room-info {
-        font-size: 16px;
+        font-size: 14px;
         overflow-wrap: anywhere;
     }
 
@@ -2034,48 +2201,35 @@ details summary:hover::before {
         margin-top: 0;
     }
 
-    #opacity_toggle input {
-        transform: none;
-        margin-right: 4px;
+    .map-controls {
+        padding-left: 10px;
+        padding-right: 10px;
     }
 
-    #opacity_toggle label {
-        font-size: 13px;
-    }
-
-    /* Highlight controls: label + select pairs that wrap instead of overflowing */
-    #tag_selector {
-        align-items: center;
-        gap: 6px 8px;
+    /* Highlight controls on phones: each label + select unit takes a full row and the select
+       fills the space after its label */
+    .map-controls {
         padding-bottom: 6px;
     }
 
-    #tag_selector label {
-        flex: 0 0 auto;
+    .highlight-field {
+        flex: 1 1 100%;
     }
 
     #tag_dropdown,
     #location_dropdown {
-        flex: 1 1 110px;
+        flex: 1 1 auto;
         min-width: 0;
         max-width: none;
+        height: auto;
         min-height: 36px;
-        padding: 6px 8px;
+        padding: 6px 28px 6px 8px;
         font-size: 14px;
         line-height: 1.2;
     }
 
-    #meta_tags_toggle input {
-        transform: none;
-        margin-right: 4px;
-    }
-
     #tag_selector #meta_tags_toggle label {
         font-size: 13px;
-    }
-
-    #help_icon {
-        margin-left: 0;
     }
 
     #image_wrapper {
@@ -2099,21 +2253,17 @@ details summary:hover::before {
         font-size: 18px;
     }
 
+    .nav-icon {
+        width: 22px;
+        height: 22px;
+    }
+
     #help_icon {
         width: 32px;
         height: 32px;
         min-width: 32px;
         min-height: 32px;
         font-size: 15px;
-    }
-}
-
-/* Dark mode: keyboard focus ring for the icon buttons (the page background is dark) */
-@media (prefers-color-scheme: dark) {
-    #search_link:focus-visible,
-    #scroll_top_btn:focus-visible,
-    #copy_link_btn:focus-visible {
-        outline-color: #66b3ff;
     }
 }
 
@@ -2144,7 +2294,7 @@ details summary:hover::before {
     }
 
     /* The current-room glow stops pulsing; the static glow stays visible.
-       This must sit after the .highlight_box rule that declares the animation. */
+     This must sit after the .highlight_box rule that declares the animation. */
     .highlight_box {
         animation: none;
     }
@@ -2163,7 +2313,7 @@ details summary:hover::before {
     list-style: none;
     font-size: 12px;
     line-height: 1.3;
-    color: #475569;
+    color: var(--text-secondary);
 }
 
 .map-legend-item {
@@ -2190,13 +2340,6 @@ details summary:hover::before {
     font-weight: 600;
 }
 
-@media (prefers-color-scheme: dark) {
-    .map-legend {
-        color: #cbd5e1;
-    }
-}
-
-
 /* ==========================================================================
    Search experience: results, map groups, notices, autocomplete details
    ========================================================================== */
@@ -2214,9 +2357,9 @@ details summary:hover::before {
 .search-notice {
     margin: 8px 0;
     padding: 10px 14px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-panel);
     border-radius: 6px;
-    background-color: #f8fafc;
+    background-color: var(--surface-panel);
 }
 
 .search-notice p {
@@ -2244,17 +2387,17 @@ details summary:hover::before {
     width: auto;
     margin: 0;
     padding: 6px 12px;
-    border: 1px solid #0066cc;
+    border: 1px solid var(--accent);
     border-radius: 4px;
     background-color: transparent;
-    color: #0066cc;
+    color: var(--accent);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
 }
 
 .search-action-button:hover {
-    background-color: #e6f3ff;
+    background-color: var(--surface-tint);
 }
 
 /* Map groups: name on the left, count on the right, proportional bar underneath */
@@ -2274,7 +2417,7 @@ details summary:hover::before {
     height: 4px;
     margin-top: 6px;
     border-radius: 2px;
-    background-color: #d9dee5;
+    background-color: var(--surface-meter);
     overflow: hidden;
 }
 
@@ -2283,11 +2426,11 @@ details summary:hover::before {
     width: calc(var(--share, 0) * 1%);
     height: 100%;
     border-radius: 2px;
-    background-color: #0066cc;
+    background-color: var(--accent);
 }
 
 .unmapped-button .map-group-bar-fill {
-    background-color: #b45309;
+    background-color: var(--unmapped-fill);
 }
 
 /* Result rows: one-line snippet, highlighted match, map chip */
@@ -2298,7 +2441,7 @@ details summary:hover::before {
     font-size: 13px;
     font-weight: normal;
     line-height: 1.4;
-    color: #475569;
+    color: var(--text-secondary);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -2306,18 +2449,18 @@ details summary:hover::before {
 mark.result-match {
     padding: 0 2px;
     border-radius: 2px;
-    background-color: #fde68a;
-    color: #1f2937;
+    background-color: var(--mark-bg);
+    color: var(--mark-text);
     font-weight: 600;
 }
 
 .result-chip {
     display: inline-block;
     padding: 1px 8px;
-    border: 1px solid #b9d3ee;
+    border: 1px solid var(--chip-info-border);
     border-radius: 999px;
-    background-color: #e6f0fa;
-    color: #0b4f8a;
+    background-color: var(--chip-info-bg);
+    color: var(--chip-info-text);
     font-size: 12px;
     font-weight: 600;
     line-height: 1.4;
@@ -2330,61 +2473,14 @@ mark.result-match {
 
 .suggestion-count {
     flex: none;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 12px;
     white-space: nowrap;
 }
 
 .suggestion-item:hover .suggestion-count,
 .suggestion-item.selected .suggestion-count {
-    color: #fff;
-}
-
-@media (prefers-color-scheme: dark) {
-    .search-notice {
-        border-color: #334155;
-        background-color: #1e293b;
-    }
-
-    .search-action-button {
-        border-color: #66b3ff;
-        color: #66b3ff;
-    }
-
-    .search-action-button:hover {
-        background-color: #1e293b;
-    }
-
-    .map-group-bar {
-        background-color: #444;
-    }
-
-    .map-group-bar-fill {
-        background-color: #66b3ff;
-    }
-
-    .unmapped-button .map-group-bar-fill {
-        background-color: #fbbf24;
-    }
-
-    .result-snippet {
-        color: #cbd5e1;
-    }
-
-    mark.result-match {
-        background-color: #854d0e;
-        color: #fef3c7;
-    }
-
-    .result-chip {
-        border-color: #2f5686;
-        background-color: #1e3a5f;
-        color: #bfdbfe;
-    }
-
-    .suggestion-count {
-        color: #94a3b8;
-    }
+    color: var(--static-white);
 }
 
 /* ==========================================================================
@@ -2417,10 +2513,10 @@ mark.result-match {
     min-height: 32px;
     margin: 0;
     padding: 2px 10px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-control);
     border-radius: 4px;
-    background-color: #fff;
-    color: #334155;
+    background-color: var(--surface);
+    color: var(--text);
     font-size: 13px;
     font-weight: 600;
     line-height: 1;
@@ -2429,19 +2525,19 @@ mark.result-match {
 }
 
 .map-zoom-button:hover {
-    border-color: #94a3b8;
-    background-color: #f1f5f9;
+    border-color: var(--border-hover);
+    background-color: var(--surface-chip);
 }
 
 .map-zoom-button[aria-pressed="true"] {
-    border-color: #0066cc;
-    background-color: #0066cc;
-    color: #fff;
+    border-color: var(--accent-fill);
+    background-color: var(--accent-fill);
+    color: var(--static-white);
 }
 
 .map-zoom-button[aria-pressed="true"]:hover {
-    border-color: #0055aa;
-    background-color: #0055aa;
+    border-color: var(--accent-fill-hover);
+    background-color: var(--accent-fill-hover);
 }
 
 .map-zoom-button[aria-disabled="true"] {
@@ -2450,7 +2546,7 @@ mark.result-match {
 }
 
 .map-zoom-button:focus-visible {
-    outline: 3px solid #0066cc;
+    outline: 3px solid var(--focus-ring);
     outline-offset: 1px;
     box-shadow: none;
 }
@@ -2462,7 +2558,7 @@ mark.result-match {
 
 .map-zoom-level {
     min-width: 7ch;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 12px;
     font-variant-numeric: tabular-nums;
     text-align: center;
@@ -2475,7 +2571,7 @@ mark.result-match {
     max-height: 80dvh;
     padding: 0;
     overflow: auto;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-panel);
     border-radius: 4px;
 }
 
@@ -2503,42 +2599,6 @@ mark.result-match {
     }
 }
 
-@media (prefers-color-scheme: dark) {
-    .map-zoom-button {
-        border-color: #475569;
-        background-color: #1e293b;
-        color: #e2e8f0;
-    }
-
-    .map-zoom-button:hover {
-        border-color: #64748b;
-        background-color: #334155;
-    }
-
-    .map-zoom-button[aria-pressed="true"] {
-        border-color: #1d6fd1;
-        background-color: #1d6fd1;
-        color: #fff;
-    }
-
-    .map-zoom-button[aria-pressed="true"]:hover {
-        border-color: #1a5fb4;
-        background-color: #1a5fb4;
-    }
-
-    .map-zoom-button:focus-visible {
-        outline-color: #66b3ff;
-    }
-
-    .map-zoom-level {
-        color: #cbd5e1;
-    }
-
-    #image_wrapper.map-zoomed {
-        border-color: #334155;
-    }
-}
-
 /* ==========================================================================
    Loading screen: download progress and error recovery
    ========================================================================== */
@@ -2547,7 +2607,7 @@ mark.result-match {
     height: 6px;
     margin-top: 14px;
     border-radius: 3px;
-    background-color: rgba(0, 0, 0, 0.15);
+    background-color: var(--bar-track);
     overflow: hidden;
 }
 
@@ -2556,7 +2616,7 @@ mark.result-match {
     width: calc(var(--progress, 0) * 1%);
     height: 100%;
     border-radius: 3px;
-    background-color: #0066cc;
+    background-color: var(--accent);
 }
 
 /* Indeterminate (download size unknown): a short bar sweeps across the track */
@@ -2577,7 +2637,7 @@ mark.result-match {
 
 .loading-detail {
     margin-top: 8px;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 13px;
     font-variant-numeric: tabular-nums;
 }
@@ -2585,7 +2645,7 @@ mark.result-match {
 .loading-note {
     max-width: 36ch;
     margin-top: 6px;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 12px;
     line-height: 1.4;
     text-align: center;
@@ -2607,14 +2667,14 @@ mark.result-match {
 
 .loading-error-message {
     margin: 0;
-    color: #b91c1c;
+    color: var(--danger-text-strong);
     font-size: 15px;
     font-weight: 600;
 }
 
 .loading-error-detail {
     margin: 0;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 12px;
     overflow-wrap: anywhere;
 }
@@ -2627,54 +2687,24 @@ mark.result-match {
     width: auto;
     margin: 8px 0 0;
     padding: 8px 24px;
-    border: 1px solid #0066cc;
+    border: 1px solid var(--accent-fill);
     border-radius: 6px;
-    background-color: #0066cc;
-    color: #fff;
+    background-color: var(--accent-fill);
+    color: var(--static-white);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
 }
 
 .loading-retry:hover {
-    border-color: #0055aa;
-    background-color: #0055aa;
+    border-color: var(--accent-fill-hover);
+    background-color: var(--accent-fill-hover);
 }
 
+/* Dark-only overrides: these have no light-theme declaration to turn into a token. */
 @media (prefers-color-scheme: dark) {
-    .loading-bar {
-        background-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .loading-bar-fill {
-        background-color: #66b3ff;
-    }
-
-    .loading-detail,
-    .loading-note {
-        color: #cbd5e1;
-    }
-
-    .loading-error-message {
-        color: #fca5a5;
-    }
-
-    .loading-error-detail {
-        color: #94a3b8;
-    }
-
-    .loading-retry {
-        border-color: #1d6fd1;
-        background-color: #1d6fd1;
-    }
-
-    .loading-retry:hover {
-        border-color: #1a5fb4;
-        background-color: #1a5fb4;
-    }
-
-    .loading-retry:focus {
-        outline-color: #66b3ff;
+    .loading-retry:focus-visible {
+        outline-color: var(--focus-ring);
     }
 }
 
@@ -2684,12 +2714,341 @@ mark.result-match {
     .loading-bar-indeterminate .loading-bar-fill {
         width: 100%;
         animation: none;
-        background-image: repeating-linear-gradient(
-            -45deg,
-            rgba(255, 255, 255, 0.45) 0,
-            rgba(255, 255, 255, 0.45) 6px,
-            transparent 6px,
-            transparent 12px
-        );
+        background-image: repeating-linear-gradient( -45deg, rgba(255, 255, 255, 0.45) 0, rgba(255, 255, 255, 0.45) 6px, transparent 6px, transparent 12px );
+    }
+}
+
+/* ==========================================================================
+   Not-found layout and map hover tooltip
+   ========================================================================== */
+.not-found-main {
+    padding: 20px;
+}
+
+.not-found-actions {
+    margin-top: 15px;
+}
+
+.not-found-link {
+    font-weight: bold;
+}
+
+#updated_at.not-found-footer {
+    margin-top: 30px;
+}
+
+/* Hover tooltip for rooms on the map. It is positioned on screen from JS (left/top),
+   sits over light map art in both themes, so it uses a dark surface with a light edge. */
+.map-tooltip {
+    position: fixed;
+    z-index: 200;
+    max-width: 260px;
+    padding: 6px 10px;
+    border: 1px solid var(--tooltip-border);
+    border-radius: 6px;
+    background-color: var(--tooltip-bg);
+    box-shadow: var(--tooltip-shadow);
+    color: var(--tooltip-text);
+    font-size: 13px;
+    line-height: 1.35;
+    pointer-events: none;
+    animation: map-tooltip-in 0.12s ease-out;
+}
+
+.map-tooltip[hidden] {
+    display: none;
+}
+
+.map-tooltip-title {
+    display: block;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.map-tooltip-meta {
+    display: block;
+    color: var(--tooltip-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+@keyframes map-tooltip-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .map-tooltip {
+        animation: none;
+    }
+}
+
+/* ==========================================================================
+   ATLAS TYPE AND MOTION
+   Room IDs in search results use the mono face; the room page fades up once
+   on render (CSS only, no JS). Each render builds new elements, so the
+   animation plays every time a room opens.
+   ========================================================================== */
+.result-id {
+    font-family: var(--font-mono);
+}
+
+@keyframes atlas-rise {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* fill-mode "backwards" holds the first frame during the delay but lets the
+   hover lift on .exit-item work again once the animation has finished. */
+.room-card {
+    animation: atlas-rise 0.4s ease-out backwards;
+}
+
+.exits-section {
+    animation: atlas-rise 0.4s ease-out 0.08s backwards;
+}
+
+.tag-badge {
+    animation: atlas-rise 0.35s ease-out 0.12s backwards;
+}
+
+.exit-item {
+    animation: atlas-rise 0.35s ease-out 0.16s backwards;
+}
+
+.tag-badge:nth-child(2) { animation-delay: 0.14s; }
+.tag-badge:nth-child(3) { animation-delay: 0.16s; }
+.tag-badge:nth-child(4) { animation-delay: 0.18s; }
+.tag-badge:nth-child(5) { animation-delay: 0.2s; }
+.tag-badge:nth-child(n + 6) { animation-delay: 0.22s; }
+
+.exit-item:nth-child(2) { animation-delay: 0.19s; }
+.exit-item:nth-child(3) { animation-delay: 0.22s; }
+.exit-item:nth-child(4) { animation-delay: 0.25s; }
+.exit-item:nth-child(5) { animation-delay: 0.28s; }
+.exit-item:nth-child(6) { animation-delay: 0.31s; }
+.exit-item:nth-child(7) { animation-delay: 0.34s; }
+.exit-item:nth-child(n + 8) { animation-delay: 0.37s; }
+
+/* Reduced motion: everything is simply there, with no fade or slide */
+@media (prefers-reduced-motion: reduce) {
+    .room-card,
+    .exits-section,
+    .tag-badge,
+    .exit-item {
+        animation: none;
+    }
+}
+
+/* Landing page: no entrance animation or hover easing under reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .search-hero {
+        animation: none;
+    }
+
+    #main-content .example-chip,
+    ul.map-tile-grid a.map-tile {
+        transition: none;
+    }
+}
+
+/* ==========================================================================
+   ROOM PAGE: two-pane layout (1100px and up)
+   --------------------------------------------------------------------------
+   Rooms with a map: map pane on the left (sticky), title and details on the right.
+   Below 1100px, or for rooms without a map, the single-column stack above applies.
+   The map pane is moved as one unit and its internals are not restyled, apart from
+   the sizing caps below: overlays and click hit-testing read the image's rendered size
+   and bounding box, so they stay aligned at any pane width or height.
+   The nav (#sticky-header) stays the only full-width sticky bar; the pane sticks just below it.
+   ========================================================================== */
+@media (min-width: 1100px) {
+    .room-page.has-map {
+        --room-nav-height: 48px;
+        /* Space inside the pane taken by the controls and the legend/zoom row above the image */
+        --room-pane-reserve: 190px;
+    }
+
+    .room-page.has-map #navigation_header {
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        min-height: var(--room-nav-height);
+    }
+
+    .room-page.has-map .room-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(380px, 1fr);
+        grid-template-rows: auto 1fr;
+        grid-template-areas:
+            "map title"
+            "map details";
+        column-gap: 32px;
+        align-items: start;
+    }
+
+    /* Right column: title, then the details */
+    .room-page.has-map #header {
+        grid-area: title;
+        min-width: 0;
+        padding: 10px 25px 0 0;
+    }
+
+    .room-page.has-map #main-content {
+        grid-area: details;
+        min-width: 0;
+        padding-right: 25px;
+    }
+
+    .room-page.has-map .room-card,
+    .room-page.has-map .exits-section,
+    .room-page.has-map .inline-search-section {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .room-page.has-map #full_info_div,
+    .room-page.has-map #nearby_rooms_div {
+        padding-left: 0;
+    }
+
+    .room-page.has-map #after_image #updated_at {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    /* Left column: the map unit, spanning both rows so it can stay in view while the right column scrolls */
+    .room-page.has-map .room-map-pane {
+        grid-area: map;
+        position: sticky;
+        top: calc(var(--room-nav-height) + 8px);
+        z-index: 1;
+        align-self: start;
+        min-width: 0;
+        max-height: calc(100vh - var(--room-nav-height) - 16px);
+        max-height: calc(100dvh - var(--room-nav-height) - 16px);
+        padding: 4px 4px 8px 25px;
+        overflow-y: auto;
+    }
+
+    .room-page.has-map .map-controls,
+    .room-page.has-map .map-toolbar {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    /* Fit: the image fills the pane's width, and its height is capped so the whole map stays on screen.
+       Width and height keep the image's aspect ratio. Zoomed mode is excluded on purpose, so the
+       zoom viewport keeps working exactly as before (its width comes from --map-width). */
+    .room-page.has-map #image_wrapper:not(.map-zoomed) {
+        padding: 1px 0 5px;
+    }
+
+    .room-page.has-map #image_wrapper:not(.map-zoomed) #mapimage {
+        max-width: 100%;
+        max-height: calc(100vh - var(--room-nav-height) - 16px - var(--room-pane-reserve));
+        max-height: calc(100dvh - var(--room-nav-height) - 16px - var(--room-pane-reserve));
+    }
+
+    .room-page.has-map #image_wrapper.map-zoomed {
+        max-height: calc(100vh - var(--room-nav-height) - 16px - var(--room-pane-reserve));
+        max-height: calc(100dvh - var(--room-nav-height) - 16px - var(--room-pane-reserve));
+    }
+}
+
+/* Short windows: a sticky pane would leave no room for the map, so it scrolls with the page */
+@media (min-width: 1100px) and (max-height: 620px) {
+    .room-page.has-map .room-map-pane {
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .room-page.has-map #image_wrapper:not(.map-zoomed) #mapimage {
+        max-height: none;
+    }
+
+    .room-page.has-map #image_wrapper.map-zoomed {
+        max-height: 80vh;
+    }
+}
+
+/* ==========================================================================
+   MAP CONTROLS AND LEGEND TOGGLES
+   ========================================================================== */
+/* Pico fills a checked checkbox with --primary, which is a light indigo in dark mode and leaves
+   its white tick hard to see. --accent-fill is the same indigo in light mode and a deeper one in dark. */
+.map-controls input[type="checkbox"]:checked,
+.map-controls input[type="checkbox"]:checked:focus {
+    --background-color: var(--accent-fill);
+    --border-color: var(--accent-fill);
+}
+
+/* Legend entries are toggle buttons: clicking one shows only that category of highlight box.
+   Real <button>s, so the Pico defaults (full width, filled, bottom margin) are reset. */
+.map-legend-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+    margin: 0;
+    padding: 3px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background-color: transparent;
+    box-shadow: none;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.map-legend-toggle:hover {
+    border-color: var(--border-control);
+    background-color: var(--surface-tint);
+}
+
+.map-legend-toggle[aria-pressed="true"] {
+    border-color: var(--accent);
+    background-color: var(--accent-tint);
+    color: var(--text);
+}
+
+.map-legend-toggle[aria-pressed="true"] .map-legend-count {
+    color: var(--accent);
+}
+
+/* Isolation: state classes on #image_wrapper (set from JS) hide the other highlight categories.
+   The boxes themselves are untouched, so counts, resizing and zoom keep working. The current-room
+   box (#highlight_box) is only hidden by no rule, so it stays visible unless it is the isolated entry. */
+#image_wrapper.legend-isolate-tag .location_highlight_box,
+#image_wrapper.legend-isolate-tag .both_highlight_box,
+#image_wrapper.legend-isolate-location .tag_highlight_box,
+#image_wrapper.legend-isolate-location .both_highlight_box,
+#image_wrapper.legend-isolate-both .tag_highlight_box,
+#image_wrapper.legend-isolate-both .location_highlight_box,
+#image_wrapper.legend-isolate-current .tag_highlight_box,
+#image_wrapper.legend-isolate-current .location_highlight_box,
+#image_wrapper.legend-isolate-current .both_highlight_box {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .map-legend-toggle {
+        transition: none;
     }
 }

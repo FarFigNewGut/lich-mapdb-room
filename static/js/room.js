@@ -1,6 +1,8 @@
-import { getRoomById, getRoomByNumericId, getRoomsOnMap, getRoomsByImage, getMapCategories, getAllRooms, getAllTags } from './data.js';
+import { getRoomById, getRoomByNumericId, getRoomsOnMap, getRoomsByImage, getMapCategories } from './data.js';
 import { navigate } from './router.js';
 import { announceToScreenReader, escapeHtml, getUpdatedAt } from './utils.js';
+import { buildMapDropdown, renderNotFound } from './shell.js';
+import { initTagSearch } from './tag-search.js';
 
 const COMPASS_ORDER = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest', 'up', 'down', 'out'];
 const COMPASS_ALIASES = { n: 'north', ne: 'northeast', e: 'east', se: 'southeast', s: 'south', sw: 'southwest', w: 'west', nw: 'northwest' };
@@ -8,14 +10,25 @@ const COMPASS_ALIASES = { n: 'north', ne: 'northeast', e: 'east', se: 'southeast
 // Zoom steps as a fraction of the image's natural size; 'fit' is the responsive default
 const MAP_ZOOM_STEPS = [0.2, 0.35, 0.5, 0.75, 1, 1.5, 2, 3];
 
+// Inline SVG icons for the nav buttons. They draw with currentColor, so they follow the theme
+// and the button's hover/focus states, and are hidden from screen readers (the buttons have labels).
+const SVG_ATTRS = 'class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"';
+const ICON_SEARCH = `<svg ${SVG_ATTRS}><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>`;
+const ICON_SCROLL_TOP = `<svg ${SVG_ATTRS}><path d="M5 4h14"></path><path d="M12 20V9"></path><path d="M6 14l6-6 6 6"></path></svg>`;
+const ICON_COPY_LINK = `<svg ${SVG_ATTRS}><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"></path><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"></path></svg>`;
+
 let currentRoom = null;
 let sameImageRooms = [];
 let mapResizeObserver = null;
 let mapZoom = 'fit';
+// Which legend category is isolated on the map ('current', 'tag', 'location', 'both') or null for all
+let legendIsolate = null;
+let lastLegendCounts = { tag: 0, location: 0, both: 0 };
 
-// escapeHtml() leaves double quotes alone, so attribute values need this extra step
+// escapeHtml() now escapes quotes itself, so it is attribute-safe; this name is kept
+// so the many existing attribute call sites read clearly
 function escapeAttr(str) {
-    return escapeHtml(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return escapeHtml(str);
 }
 
 // Destination title for an exit or StringProc; empty string if the room or title is missing
@@ -54,7 +67,7 @@ function formatStringProc(code) {
 export function renderRoom(roomIdOrUid, queryParams = {}) {
     const room = getRoomById(roomIdOrUid);
     if (!room) {
-        return renderNotFound(roomIdOrUid);
+        return renderRoomNotFound(roomIdOrUid);
     }
     
     currentRoom = room;
@@ -71,45 +84,14 @@ export function renderRoom(roomIdOrUid, queryParams = {}) {
     announceToScreenReader(`Loaded room: ${room.title[0]}`);
 }
 
-function renderNotFound(roomIdOrUid) {
-    const app = document.getElementById('app');
-    const mapCategories = getMapCategories();
-    
-    app.innerHTML = `
-        <a href="#main-content" class="skip-link">Skip to main content</a>
-        
-        <nav id="navigation" role="navigation" aria-label="Map navigation">
-            <div id="navigation_header">
-                <div id="map_navigation">
-                    ${buildMapDropdown(mapCategories)}
-                </div>
-            </div>
-        </nav>
-        
-        <main id="main-content" role="main" style="padding: 20px;">
-            <h1>Room Not Found</h1>
-            <p>Could not find room with ID or UID: <strong>${escapeHtml(String(roomIdOrUid))}</strong></p>
-            <p>The room may have been removed from the database, or the ID may be incorrect.</p>
-            <p style="margin-top: 15px;">
-                <a href="#/search" style="font-weight: bold;">← Return to search</a>
-            </p>
-            <footer id="updated_at" role="contentinfo" style="margin-top: 30px;">
-                <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
-            </footer>
-        </main>
-    `;
-    
-    const mapDropdown = document.getElementById('map_dropdown');
-    if (mapDropdown) {
-        mapDropdown.addEventListener('change', () => {
-            const selectedRoomId = mapDropdown.value;
-            if (selectedRoomId) {
-                navigate(`/room/${selectedRoomId}`);
-            }
-        });
-    }
-    
-    document.title = 'Room Not Found - Lich Map Room Database';
+function renderRoomNotFound(roomIdOrUid) {
+    renderNotFound(roomIdOrUid, {
+        kind: 'room',
+        app: document.getElementById('app'),
+        mapCategories: getMapCategories(),
+        updatedAt: getUpdatedAt(),
+        navigate
+    });
     announceToScreenReader('Room not found');
 }
 
@@ -119,7 +101,12 @@ function buildRoomHTML(room, queryParams) {
     const imageTags = collectImageTags(sameImageRooms);
     const imageLocations = collectImageLocations(sameImageRooms);
     
+    // Layout: .room-page is one column below 1100px. At 1100px and up, rooms with a map become two
+    // panes (map on the left, details on the right) purely through CSS; the DOM order here is
+    // also the single-column reading order: nav, title, map controls, map, details. The nav is the only
+    // sticky bar; in two-pane mode the map pane sticks below it.
     return `
+        <div class="room-page${room.image ? ' has-map' : ''}">
         <a href="#main-content" class="skip-link">Skip to main content</a>
         <a href="#navigation" class="skip-link">Skip to navigation</a>
         <a href="#search_section" class="skip-link">Skip to search</a>
@@ -130,35 +117,40 @@ function buildRoomHTML(room, queryParams) {
                     <div id="map_navigation">
                         ${buildMapDropdown(mapCategories)}
                         ${adjacentMaps.length ? buildAdjacentMapDropdown(adjacentMaps) : ''}
-                    <button type="button" id="search_link" title="Search for another room" aria-label="Search for another room">&#128269;</button>
-                    <button type="button" id="scroll_top_btn" title="Scroll to top" aria-label="Scroll to top of page">&#128285;</button>
-                    <button type="button" id="copy_link_btn" title="Copy link for this room" aria-label="Copy link for this room">&#128279;</button>
+                    <button type="button" id="search_link" title="Search for another room" aria-label="Search for another room">${ICON_SEARCH}</button>
+                    <button type="button" id="scroll_top_btn" title="Scroll to top" aria-label="Scroll to top of page">${ICON_SCROLL_TOP}</button>
+                    <button type="button" id="copy_link_btn" title="Copy link for this room" aria-label="Copy link for this room">${ICON_COPY_LINK}</button>
                     </div>
                 </div>
             </nav>
-            
-            <header id="header" role="banner">
-                <div id="title_row">
-                    <div id="room-header">
-                        <h1>${escapeHtml(room.title[0])}</h1>
-                        <p class="room-info">${room.id} | u${room.uid?.[0] || 'N/A'}${room.location ? ` | ${escapeHtml(room.location)}` : ''}</p>
-                    </div>
-                    ${room.image ? `
-                    <div id="opacity_toggle">
-                        <input type="checkbox" id="opacity_checkbox">
-                        <label for="opacity_checkbox">Toggle opacity</label>
-                    </div>
-                    ` : ''}
-                </div>
-                ${room.image && imageTags.length ? buildTagSelector(imageTags, imageLocations) : ''}
-            </header>
         </div>
         
         <div id="copy_link_popup" role="alert" aria-live="polite">Link copied to clipboard!</div>
         
         ${room.image ? buildHelpPopup() : ''}
-        ${room.image ? buildMapToolbar() : ''}
-        ${room.image ? buildMapSection(room) : ''}
+        
+        <div class="room-layout">
+        <header id="header" role="banner">
+            <div id="title_row">
+                <div id="room-header">
+                    <h1>${escapeHtml(room.title[0])}</h1>
+                    <p class="room-info">${room.id} | u${room.uid?.[0] || 'N/A'}${room.location ? ` | ${escapeHtml(room.location)}` : ''}</p>
+                </div>
+            </div>
+        </header>
+        ${room.image ? `
+        <div class="room-map-pane">
+            <div class="map-controls">
+                <div id="opacity_toggle">
+                    <input type="checkbox" id="opacity_checkbox">
+                    <label for="opacity_checkbox" title="Fade the map so highlighted rooms stand out">Dim map</label>
+                </div>
+                ${imageTags.length ? buildTagSelector(imageTags, imageLocations) : ''}
+            </div>
+            ${buildMapToolbar()}
+            ${buildMapSection(room)}
+        </div>
+        ` : ''}
         
         <main id="main-content" role="main">
             <div id="after_image">
@@ -174,19 +166,9 @@ function buildRoomHTML(room, queryParams) {
                 </footer>
             </div>
         </main>
+        </div>
+        </div>
     `;
-}
-
-function buildMapDropdown(mapCategories) {
-    let options = '<option value="">Navigate to map...</option>';
-    for (const [category, maps] of mapCategories) {
-        options += `<optgroup label="${escapeAttr(category)}">`;
-        for (const [mapName, roomId] of maps) {
-            options += `<option value="${roomId}">${escapeHtml(mapName)}</option>`;
-        }
-        options += '</optgroup>';
-    }
-    return `<select id="map_dropdown" aria-label="Select a map to navigate to">${options}</select>`;
 }
 
 function buildAdjacentMapDropdown(adjacentMaps) {
@@ -205,17 +187,23 @@ function buildTagSelector(imageTags, imageLocations) {
         locationOptions += `<option value="${escapeAttr(location)}">${escapeHtml(location)}</option>`;
     }
     
+    // Each .highlight-field keeps its label glued to its control, so wrapping moves whole units
+    // (tag + select, meta-tags toggle, location + select + help) and never splits a label from its select.
     return `
         <div id="tag_selector">
-            <label for="tag_dropdown">Highlight tag:</label>
-            <select id="tag_dropdown" aria-describedby="tag-dropdown-help">${tagOptions}</select>
+            <div class="highlight-field">
+                <label for="tag_dropdown">Highlight tag:</label>
+                <select id="tag_dropdown" aria-describedby="tag-dropdown-help">${tagOptions}</select>
+            </div>
             <span id="meta_tags_toggle">
                 <input type="checkbox" id="show_meta_tags_checkbox">
                 <label for="show_meta_tags_checkbox">Show meta tags</label>
             </span>
-            <label for="location_dropdown">Highlight location:</label>
-            <select id="location_dropdown" aria-describedby="location-dropdown-help">${locationOptions}</select>
-            <button id="help_icon" type="button" aria-label="Show help for room highlighting" tabindex="0">?</button>
+            <div class="highlight-field">
+                <label for="location_dropdown">Highlight location:</label>
+                <select id="location_dropdown" aria-describedby="location-dropdown-help">${locationOptions}</select>
+                <button id="help_icon" type="button" aria-label="Show help for room highlighting" tabindex="0">?</button>
+            </div>
             <div id="tag-dropdown-help" class="sr-only">Select a tag to highlight all rooms on this map that have that tag</div>
             <div id="location-dropdown-help" class="sr-only">Select a location to highlight all rooms in that specific area of the map</div>
         </div>
@@ -287,23 +275,35 @@ function buildMapLegend() {
     return `
         <ul id="map_legend" class="map-legend" aria-label="Map highlight legend">
             <li class="map-legend-item">
-                <span class="map-legend-swatch highlight_box_example" aria-hidden="true"></span>
-                <span>Current room</span>
+                <button type="button" id="legend_current_btn" class="map-legend-toggle" data-legend-kind="current" aria-pressed="false"
+                        title="Show only the current room. Click again to show all.">
+                    <span class="map-legend-swatch highlight_box_example" aria-hidden="true"></span>
+                    <span>Current room</span>
+                </button>
             </li>
             <li class="map-legend-item" id="legend_tag" hidden>
-                <span class="map-legend-swatch tag_highlight_box_example" aria-hidden="true"></span>
-                <span id="legend_tag_label">Tag</span>
-                <span id="legend_tag_count" class="map-legend-count"></span>
+                <button type="button" id="legend_tag_btn" class="map-legend-toggle" data-legend-kind="tag" aria-pressed="false"
+                        title="Show only these rooms. Click again to show all.">
+                    <span class="map-legend-swatch tag_highlight_box_example" aria-hidden="true"></span>
+                    <span id="legend_tag_label">Tag</span>
+                    <span id="legend_tag_count" class="map-legend-count"></span>
+                </button>
             </li>
             <li class="map-legend-item" id="legend_location" hidden>
-                <span class="map-legend-swatch location_highlight_box_example" aria-hidden="true"></span>
-                <span id="legend_location_label">Location</span>
-                <span id="legend_location_count" class="map-legend-count"></span>
+                <button type="button" id="legend_location_btn" class="map-legend-toggle" data-legend-kind="location" aria-pressed="false"
+                        title="Show only these rooms. Click again to show all.">
+                    <span class="map-legend-swatch location_highlight_box_example" aria-hidden="true"></span>
+                    <span id="legend_location_label">Location</span>
+                    <span id="legend_location_count" class="map-legend-count"></span>
+                </button>
             </li>
             <li class="map-legend-item" id="legend_both" hidden>
-                <span class="map-legend-swatch both_highlight_box_example" aria-hidden="true"></span>
-                <span>Tag + location</span>
-                <span id="legend_both_count" class="map-legend-count"></span>
+                <button type="button" id="legend_both_btn" class="map-legend-toggle" data-legend-kind="both" aria-pressed="false"
+                        title="Show only these rooms. Click again to show all.">
+                    <span class="map-legend-swatch both_highlight_box_example" aria-hidden="true"></span>
+                    <span>Tag + location</span>
+                    <span id="legend_both_count" class="map-legend-count"></span>
+                </button>
             </li>
             <li class="map-legend-item map-legend-total" id="legend_total" hidden></li>
         </ul>
@@ -316,6 +316,7 @@ function buildMapSection(room) {
         <section id="map-section" aria-labelledby="map-description">
             <div id="image_wrapper">
                 <div id="highlight_box" class="highlight_box"></div>
+                <div id="map_tooltip" class="map-tooltip" aria-hidden="true" hidden></div>
                 <img id="mapimage" src="static/maps/${room.image}" alt="Map of ${escapeAttr(mapAlt)} showing room ${escapeAttr(room.title[0])}. Click on rooms to navigate or use the nearby rooms list below for accessible navigation." role="img" tabindex="0">
                 <div id="map-description" class="sr-only">
                     Interactive map showing ${escapeHtml(room.title[0])} and connected rooms. Use tab to navigate to room connections below or use the text-based navigation.
@@ -465,7 +466,7 @@ function buildInlineSearchForms() {
                     <div class="inline-tag-input-wrapper">
                         <input type="text" id="inlineTagInput" placeholder="Start typing a tag..." autocomplete="off"
                                aria-expanded="false" aria-autocomplete="both" role="combobox" aria-controls="inlineTagSuggestions">
-                        <ul id="inlineTagSuggestions" tabindex="0" role="listbox" aria-label="Tag suggestions"></ul>
+                        <ul id="inlineTagSuggestions" class="tag-suggestions" tabindex="0" role="listbox" aria-label="Tag suggestions"></ul>
                     </div>
                     <select id="inlineImageSelect" disabled aria-label="Select a map">
                         <option value="">Select map...</option>
@@ -643,12 +644,14 @@ function initRoomInteractions(room, queryParams) {
             if (hasHighlightParams) highlightRooms();
         });
         mapImage.addEventListener('click', handleMapClick);
+        initMapTooltip();
         if (mapImage.complete) {
             fixHighlightBox(room);
             if (hasHighlightParams) highlightRooms();
         }
         watchMapResize(room);
         initMapZoom(room);
+        initMapLegend();
     }
     
     const helpIcon = document.getElementById('help_icon');
@@ -667,7 +670,7 @@ function initRoomInteractions(room, queryParams) {
         });
     }
 
-    initInlineSearch();
+    initRoomSearchPanel();
     initStringProcTabs();
     
     const searchLink = document.getElementById('search_link');
@@ -1020,6 +1023,8 @@ function highlightRooms() {
     const selectedTag = document.getElementById('tag_dropdown')?.value || '';
     const selectedLocation = document.getElementById('location_dropdown')?.value || '';
     
+    // A new selection starts from "show all"; resizes call renderHighlightBoxes directly and keep the filter
+    setLegendIsolate(null, { announce: false });
     const counts = renderHighlightBoxes(selectedTag, selectedLocation);
     
     if (!selectedTag && !selectedLocation) {
@@ -1141,12 +1146,73 @@ function updateMapLegend(selectedTag, selectedLocation, counts) {
         if (labelEl && entry.label) labelEl.textContent = entry.label;
     }
     
+    lastLegendCounts = { ...counts };
+    
+    // If the isolated category no longer has a legend entry, go back to showing everything
+    if (legendIsolate && legendIsolate !== 'current' && document.getElementById(`legend_${legendIsolate}`)?.hidden) {
+        setLegendIsolate(null, { announce: false });
+    }
+    
     const totalEl = document.getElementById('legend_total');
     if (totalEl) {
         const total = counts.tag + counts.location + counts.both;
         totalEl.hidden = !(selectedTag || selectedLocation);
         totalEl.textContent = `${total} ${total === 1 ? 'room' : 'rooms'} highlighted`;
     }
+}
+
+// ----- Legend isolation -----
+// Clicking a legend entry shows only that category of highlight box. This only sets a state class
+// on #image_wrapper (legend-isolate-*); CSS hides the other categories. Boxes are never recomputed,
+// so the filter survives resizes and zoom changes, and the current-room box stays visible unless
+// it is the isolated entry.
+
+const LEGEND_KINDS = ['current', 'tag', 'location', 'both'];
+
+function getLegendKindLabel(kind) {
+    const hasBoth = document.getElementById('legend_both')?.hidden === false;
+    switch (kind) {
+        case 'tag': return hasBoth ? 'tag-only' : 'tag';
+        case 'location': return hasBoth ? 'location-only' : 'location';
+        case 'both': return 'tag + location';
+        default: return 'current room';
+    }
+}
+
+function setLegendIsolate(kind, { announce = true } = {}) {
+    const next = LEGEND_KINDS.includes(kind) ? kind : null;
+    const wrapper = document.getElementById('image_wrapper');
+    const changed = next !== legendIsolate;
+    legendIsolate = next;
+    
+    if (wrapper) {
+        LEGEND_KINDS.forEach(k => wrapper.classList.toggle(`legend-isolate-${k}`, k === next));
+    }
+    document.querySelectorAll('.map-legend-toggle').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.legendKind === next));
+    });
+    
+    if (!announce || !changed) return;
+    if (!next) {
+        announceToScreenReader('Showing all highlighted rooms');
+    } else if (next === 'current') {
+        announceToScreenReader('Showing only the current room');
+    } else {
+        announceToScreenReader(`Showing only ${getLegendKindLabel(next)} rooms (${lastLegendCounts[next]})`);
+    }
+}
+
+function initMapLegend() {
+    legendIsolate = null;
+    const legend = document.getElementById('map_legend');
+    if (!legend) return;
+    
+    legend.addEventListener('click', (event) => {
+        const button = event.target.closest('.map-legend-toggle');
+        if (!button) return;
+        const kind = button.dataset.legendKind;
+        setLegendIsolate(legendIsolate === kind ? null : kind);
+    });
 }
 
 // The map image is now fluid, so boxes must follow it when the viewport changes
@@ -1370,18 +1436,21 @@ function updateZoomControls() {
     document.getElementById('map_zoom_center').setAttribute('aria-disabled', String(isFit));
 }
 
-// Click-to-navigate. The click is measured against the image's own on-screen box, so it is
-// correct at any zoom level and any scroll position of the zoomed viewport.
-function handleMapClick(event) {
+// Finds the room under a screen point. The point is measured against the image's own
+// on-screen box, so the result is correct at any zoom level and scroll position.
+// Shared by click-to-navigate and the hover tooltip so both agree on what is under the pointer.
+function findRoomAtPoint(clientX, clientY) {
     const imgElement = document.getElementById('mapimage');
+    if (!imgElement || !imgElement.naturalWidth || !imgElement.naturalHeight) return null;
+    
     const imageRect = imgElement.getBoundingClientRect();
-    const clickX = event.clientX - imageRect.left;
-    const clickY = event.clientY - imageRect.top;
+    const pointX = clientX - imageRect.left;
+    const pointY = clientY - imageRect.top;
     
     const widthRatio = imgElement.clientWidth / imgElement.naturalWidth;
     const heightRatio = imgElement.clientHeight / imgElement.naturalHeight;
     
-    let clickedRoom = null;
+    let foundRoom = null;
     sameImageRooms.forEach(room => {
         if (room.image_coords) {
             const originalX = Math.floor(widthRatio * room.image_coords[0]);
@@ -1401,16 +1470,114 @@ function handleMapClick(event) {
             const roomRight = roomLeft + finalWidth;
             const roomBottom = roomTop + finalHeight;
             
-            if (clickX >= roomLeft && clickX <= roomRight &&
-                clickY >= roomTop && clickY <= roomBottom) {
-                clickedRoom = room;
+            if (pointX >= roomLeft && pointX <= roomRight &&
+                pointY >= roomTop && pointY <= roomBottom) {
+                foundRoom = room;
             }
         }
     });
     
-    if (clickedRoom) {
+    return foundRoom;
+}
+
+// Click-to-navigate. Clicking the room you are already viewing does nothing,
+// which matches the old behavior (its box sat on top of the image and swallowed the click).
+function handleMapClick(event) {
+    const clickedRoom = findRoomAtPoint(event.clientX, event.clientY);
+    
+    if (clickedRoom && clickedRoom.id !== currentRoom?.id) {
+        hideMapTooltip();
         navigateToRoom(clickedRoom.id);
     }
+}
+
+// ----- Map hover tooltip (a mouse affordance only) -----
+// Keyboard and screen-reader users get the same room information from the exits,
+// the nearby rooms list and the highlight announcements, so the tooltip is aria-hidden.
+
+let tooltipFrame = 0;
+let tooltipRoomId = null;
+
+function initMapTooltip() {
+    const imgElement = document.getElementById('mapimage');
+    const wrapper = document.getElementById('image_wrapper');
+    if (!imgElement || !wrapper) return;
+    
+    tooltipRoomId = null;
+    
+    imgElement.addEventListener('pointermove', (event) => {
+        // Touch has no hover; taps are handled by the click handler
+        if (event.pointerType === 'touch') return;
+        
+        const { clientX, clientY } = event;
+        if (tooltipFrame) cancelAnimationFrame(tooltipFrame);
+        tooltipFrame = requestAnimationFrame(() => {
+            tooltipFrame = 0;
+            updateMapTooltip(clientX, clientY);
+        });
+    });
+    imgElement.addEventListener('pointerleave', hideMapTooltip);
+    
+    // The tooltip is fixed to the screen, so it must go away when the map moves under the pointer.
+    // These are named functions, so re-registering on the next room doesn't stack listeners.
+    wrapper.addEventListener('scroll', hideMapTooltip, { passive: true });
+    window.addEventListener('scroll', hideMapTooltip, { passive: true });
+    document.addEventListener('keydown', handleTooltipKeydown);
+}
+
+function handleTooltipKeydown(event) {
+    if (event.key === 'Escape') hideMapTooltip();
+}
+
+function updateMapTooltip(clientX, clientY) {
+    const tooltip = document.getElementById('map_tooltip');
+    const imgElement = document.getElementById('mapimage');
+    if (!tooltip || !imgElement) return;
+    
+    const room = findRoomAtPoint(clientX, clientY);
+    if (!room) {
+        hideMapTooltip();
+        return;
+    }
+    
+    // Only other rooms are clickable, so only they get the pointer cursor
+    imgElement.classList.toggle('map-room-hover', room.id !== currentRoom?.id);
+    
+    // Rebuild the content only when the room under the pointer changes
+    if (tooltipRoomId !== room.id) {
+        tooltipRoomId = room.id;
+        const title = room.title?.[0] || 'Unknown';
+        tooltip.innerHTML = `
+            <span class="map-tooltip-title">${escapeHtml(title)}</span>
+            <span class="map-tooltip-meta">Room ${escapeHtml(String(room.id))}${room.id === currentRoom?.id ? ' (this room)' : ''}</span>
+        `;
+    }
+    
+    tooltip.hidden = false;
+    
+    // Sit just below and to the right of the pointer; flip to the other side near screen edges
+    const gap = 14;
+    const margin = 8;
+    const width = tooltip.offsetWidth;
+    const height = tooltip.offsetHeight;
+    let left = clientX + gap;
+    let top = clientY + gap + 4;
+    if (left + width > window.innerWidth - margin) left = clientX - width - gap;
+    if (top + height > window.innerHeight - margin) top = clientY - height - gap;
+    tooltip.style.left = `${Math.max(margin, left)}px`;
+    tooltip.style.top = `${Math.max(margin, top)}px`;
+}
+
+function hideMapTooltip() {
+    if (tooltipFrame) {
+        cancelAnimationFrame(tooltipFrame);
+        tooltipFrame = 0;
+    }
+    tooltipRoomId = null;
+    
+    const tooltip = document.getElementById('map_tooltip');
+    if (tooltip) tooltip.hidden = true;
+    document.getElementById('mapimage')?.classList.remove('map-room-hover');
 }
 
 function navigateToRoom(roomId) {
@@ -1426,9 +1593,7 @@ function navigateToRoom(roomId) {
     navigate(path);
 }
 
-let inlineTagsCache = [];
-
-function initInlineSearch() {
+function initRoomSearchPanel() {
     const basicForm = document.getElementById('inlineBasicSearchForm');
     if (basicForm) {
         basicForm.addEventListener('submit', (e) => {
@@ -1440,237 +1605,16 @@ function initInlineSearch() {
         });
     }
     
-    inlineTagsCache = getAllTags();
-    initInlineTagAutocomplete();
-    initInlineCascadingDropdowns();
-}
-
-function initInlineTagAutocomplete() {
-    const tagInput = document.getElementById('inlineTagInput');
-    const tagSuggestions = document.getElementById('inlineTagSuggestions');
-    let selectedIndex = -1;
-    
-    if (!tagInput || !tagSuggestions) return;
-    
-    tagInput.addEventListener('input', function() {
-        const inputValue = this.value.toLowerCase();
-        resetInlineDropdowns();
-        
-        if (inputValue.length > 0) {
-            const filteredTags = inlineTagsCache.filter(tag =>
-                tag.toLowerCase().includes(inputValue)
-            );
-            
-            if (filteredTags.length > 0) {
-                showInlineSuggestions(filteredTags, tagSuggestions, tagInput);
-                selectedIndex = -1;
-            } else {
-                hideInlineSuggestions(tagSuggestions, tagInput);
-            }
-        } else {
-            hideInlineSuggestions(tagSuggestions, tagInput);
-        }
+    initTagSearch({
+        tagInputId: 'inlineTagInput',
+        suggestionsId: 'inlineTagSuggestions',
+        imageSelectId: 'inlineImageSelect',
+        locationSelectId: 'inlineLocationSelect',
+        submitButtonId: 'inlineTagSearchButton',
+        formId: 'inlineTagSearchForm',
+        optionIdPrefix: 'inline-tag-option',
+        onSubmit: navigateToInlineTaggedRoom
     });
-    
-    tagInput.addEventListener('keydown', function(e) {
-        const isVisible = tagSuggestions.style.display === 'block';
-        if (!isVisible) return;
-        
-        const items = tagSuggestions.querySelectorAll('.inline-suggestion-item');
-        
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-                updateInlineHighlight(items, selectedIndex);
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                selectedIndex = Math.max(selectedIndex - 1, -1);
-                updateInlineHighlight(items, selectedIndex);
-                break;
-            case 'Enter':
-                e.preventDefault();
-                if (selectedIndex >= 0 && selectedIndex < items.length) {
-                    selectInlineTag(items[selectedIndex].textContent);
-                }
-                break;
-            case 'Escape':
-                e.preventDefault();
-                hideInlineSuggestions(tagSuggestions, tagInput);
-                break;
-        }
-    });
-    
-    tagInput.addEventListener('blur', function() {
-        setTimeout(() => {
-            if (document.activeElement !== tagInput && document.activeElement !== tagSuggestions) {
-                hideInlineSuggestions(tagSuggestions, tagInput);
-            }
-        }, 150);
-    });
-}
-
-function showInlineSuggestions(tags, container, input) {
-    container.innerHTML = '';
-    
-    tags.slice(0, 30).forEach((tag, index) => {
-        const li = document.createElement('li');
-        li.textContent = tag;
-        li.className = 'inline-suggestion-item';
-        li.setAttribute('role', 'option');
-        li.setAttribute('id', `inline-tag-option-${index}`);
-        li.setAttribute('aria-selected', 'false');
-        
-        li.addEventListener('click', (e) => {
-            e.preventDefault();
-            selectInlineTag(tag);
-        });
-        
-        container.appendChild(li);
-    });
-    
-    container.style.display = 'block';
-    input.setAttribute('aria-expanded', 'true');
-}
-
-function hideInlineSuggestions(container, input) {
-    container.style.display = 'none';
-    input.setAttribute('aria-expanded', 'false');
-}
-
-function updateInlineHighlight(items, selectedIndex) {
-    items.forEach((item, index) => {
-        if (index === selectedIndex) {
-            item.classList.add('selected');
-            item.setAttribute('aria-selected', 'true');
-        } else {
-            item.classList.remove('selected');
-            item.setAttribute('aria-selected', 'false');
-        }
-    });
-}
-
-function selectInlineTag(tag) {
-    const tagInput = document.getElementById('inlineTagInput');
-    const tagSuggestions = document.getElementById('inlineTagSuggestions');
-    
-    tagInput.value = tag;
-    hideInlineSuggestions(tagSuggestions, tagInput);
-    loadInlineImagesForTag(tag);
-}
-
-function resetInlineDropdowns() {
-    const imageSelect = document.getElementById('inlineImageSelect');
-    const locationSelect = document.getElementById('inlineLocationSelect');
-    const tagSearchButton = document.getElementById('inlineTagSearchButton');
-    
-    imageSelect.innerHTML = '<option value="">Select map...</option>';
-    imageSelect.disabled = true;
-    locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
-    locationSelect.disabled = true;
-    tagSearchButton.disabled = true;
-}
-
-function initInlineCascadingDropdowns() {
-    const imageSelect = document.getElementById('inlineImageSelect');
-    const locationSelect = document.getElementById('inlineLocationSelect');
-    const tagSearchButton = document.getElementById('inlineTagSearchButton');
-    const tagSearchForm = document.getElementById('inlineTagSearchForm');
-    
-    if (!imageSelect) return;
-    
-    imageSelect.addEventListener('change', function() {
-        const selectedImage = this.value;
-        const tagInput = document.getElementById('inlineTagInput');
-        
-        locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
-        locationSelect.disabled = true;
-        
-        if (selectedImage) {
-            loadInlineLocationsForTagAndImage(tagInput.value, selectedImage);
-            tagSearchButton.disabled = false;
-        } else {
-            tagSearchButton.disabled = true;
-        }
-    });
-    
-    if (tagSearchForm) {
-        tagSearchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const tagInput = document.getElementById('inlineTagInput');
-            const tag = tagInput.value;
-            const image = imageSelect.value;
-            const location = locationSelect.value;
-            
-            if (tag && image) {
-                navigateToInlineTaggedRoom(tag, image, location);
-            }
-        });
-    }
-}
-
-function loadInlineImagesForTag(tag) {
-    const imageSelect = document.getElementById('inlineImageSelect');
-    const allRooms = getAllRooms();
-    
-    const imagesWithTag = {};
-    
-    for (const room of allRooms) {
-        if (room.tags?.includes(tag) && room.image) {
-            if (!imagesWithTag[room.image]) {
-                let displayName = room.image;
-                if (room.tags) {
-                    for (const t of room.tags) {
-                        if (t.startsWith('meta:mapname:')) {
-                            displayName = t.replace('meta:mapname:', '');
-                            break;
-                        }
-                    }
-                }
-                imagesWithTag[room.image] = { filename: room.image, display_name: displayName };
-            }
-        }
-    }
-    
-    const images = Object.values(imagesWithTag).sort((a, b) => 
-        a.display_name.localeCompare(b.display_name)
-    );
-    
-    imageSelect.innerHTML = '<option value="">Select map...</option>';
-    images.forEach(imageData => {
-        const option = document.createElement('option');
-        option.value = imageData.filename;
-        option.textContent = imageData.display_name;
-        imageSelect.appendChild(option);
-    });
-    imageSelect.disabled = false;
-}
-
-function loadInlineLocationsForTagAndImage(tag, image) {
-    const locationSelect = document.getElementById('inlineLocationSelect');
-    
-    const locations = new Set();
-    
-    for (const room of getRoomsByImage(image)) {
-        const tagMatch = !tag || room.tags?.includes(tag);
-        
-        if (tagMatch && room.location) {
-            locations.add(room.location);
-        }
-    }
-    
-    const sortedLocations = Array.from(locations).sort();
-    
-    locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
-    sortedLocations.forEach(location => {
-        const option = document.createElement('option');
-        option.value = location;
-        option.textContent = location;
-        locationSelect.appendChild(option);
-    });
-    locationSelect.disabled = false;
 }
 
 function navigateToInlineTaggedRoom(tag, image, location) {

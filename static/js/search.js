@@ -1,18 +1,25 @@
-import { getAllRooms, getRoomById, getAllTags, getMapCategories } from './data.js';
+import { getAllRooms, getRoomById, getMapCategories, getMapDisplayName } from './data.js';
 import { navigate, getCurrentPath } from './router.js';
 import { escapeHtml, announceToScreenReader, getUpdatedAt } from './utils.js';
+import { buildMapDropdown, wireMapDropdown } from './shell.js';
+import { initTagSearch } from './tag-search.js';
 
 const RESULT_PAGE_LIMIT = 100;
 const RESULT_SHOW_ALL_LIMIT = 2000;
 const MAP_GROUP_VISIBLE_COUNT = 8;
-const MAX_TAG_SUGGESTIONS = 50;
+// Categories with more maps than this start collapsed on the landing page
+const MAP_CATEGORY_OPEN_LIMIT = 30;
+// Real values from the current data: two tags, a room ID, a UID and a word
+const EXAMPLE_SEARCHES = [
+    { value: 'bank', kind: 'tag' },
+    { value: 'herbalist', kind: 'tag' },
+    { value: '228', kind: 'room ID', mono: true },
+    { value: 'u7046', kind: 'UID', mono: true },
+    { value: 'fountain', kind: 'text' }
+];
 const ROOM_ID_PATTERN = /^\d+$/;
 const ROOM_UID_PATTERN = /^u\d+$/;
 
-let allTagsCache = [];
-let tagRoomCounts = null;
-let mapDisplayNames = null;
-let resolvedTag = '';
 let currentSearch = null;
 
 // escapeHtml() leaves double quotes alone, so attribute values need this extra step
@@ -38,12 +45,11 @@ function goToSearch(term, mapFilter) {
 export function renderSearch(queryParams = {}) {
     const app = document.getElementById('app');
     currentSearch = null;
-    resolvedTag = '';
     app.innerHTML = buildSearchHTML(queryParams);
     
     document.title = 'Search - Lich Map Room Database';
     
-    const hasQuery = Boolean(queryParams.q && queryParams.q.trim());
+    const hasQuery = hasSearchQuery(queryParams);
     if (hasQuery) {
         const redirected = executeSearch(queryParams.q, queryParams.map);
         // A direct room match replaced this page, so there is nothing left to wire up
@@ -58,37 +64,13 @@ export function renderSearch(queryParams = {}) {
     });
 }
 
-// Display name from the map's meta:mapname tag, falling back to a cleaned-up filename
-function getMapDisplayName(image) {
-    if (!mapDisplayNames) {
-        mapDisplayNames = new Map();
-        for (const room of getAllRooms()) {
-            if (!room.image || !room.tags || mapDisplayNames.has(room.image)) continue;
-            const nameTag = room.tags.find(tag => tag.startsWith('meta:mapname:'));
-            if (nameTag) {
-                mapDisplayNames.set(room.image, nameTag.replace('meta:mapname:', ''));
-            }
-        }
-    }
-    return mapDisplayNames.get(image) || image.replace(/_/g, ' ').replace(/\.(png|jpg|gif)$/i, '');
-}
-
-// Number of rooms carrying each tag, built once on first use
-function getTagRoomCounts() {
-    if (!tagRoomCounts) {
-        tagRoomCounts = new Map();
-        for (const room of getAllRooms()) {
-            if (!room.tags) continue;
-            for (const tag of room.tags) {
-                tagRoomCounts.set(tag, (tagRoomCounts.get(tag) || 0) + 1);
-            }
-        }
-    }
-    return tagRoomCounts;
+function hasSearchQuery(queryParams) {
+    return Boolean(queryParams.q && queryParams.q.trim());
 }
 
 function buildSearchHTML(queryParams) {
     const mapCategories = getMapCategories();
+    const hasQuery = hasSearchQuery(queryParams);
     
     return `
         <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -103,15 +85,23 @@ function buildSearchHTML(queryParams) {
         </nav>
         
         <main id="main-content" role="main" class="search-main">
-            <h1>Lich Map Room Database</h1>
-            <p class="search-intro">
-                Search by room ID, UID (u12345), tag name, or text. 
-                Use advanced search for map-specific filtering.
-            </p>
-            
-            ${buildSearchForms(queryParams)}
+            ${hasQuery ? `
+            ${buildSearchHero(queryParams, hasQuery)}
             
             <div id="search-results"></div>
+            
+            ${buildTagPanel()}
+            ` : `
+            <div class="search-deck">
+                ${buildSearchHero(queryParams, hasQuery)}
+                
+                ${buildTagPanel()}
+            </div>
+            
+            <div id="search-results"></div>
+            
+            ${buildMapBrowser(mapCategories)}
+            `}
             
             <footer id="updated_at" role="contentinfo" class="search-footer">
                 <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
@@ -120,86 +110,159 @@ function buildSearchHTML(queryParams) {
     `;
 }
 
-function buildMapDropdown(mapCategories) {
-    let options = '<option value="">Navigate to map...</option>';
-    for (const [category, maps] of mapCategories) {
-        options += `<optgroup label="${escapeAttr(category)}">`;
-        for (const [mapName, roomId] of maps) {
-            options += `<option value="${roomId}">${escapeHtml(mapName)}</option>`;
-        }
-        options += '</optgroup>';
-    }
-    return `<select id="map_dropdown" aria-label="Select a map to navigate to">${options}</select>`;
-}
-
-function buildSearchForms(queryParams) {
+// Title, the main search box and (on the landing state only) the intro and example chips.
+// With a query the hero shrinks to the title and the box so the results stay close to the top.
+function buildSearchHero(queryParams, hasQuery) {
     const searchValue = queryParams.q || '';
     
+    const intro = hasQuery ? '' : `
+            <p class="search-eyebrow">Gemstone IV cartography</p>`;
+    const subtitle = hasQuery ? '' : `
+            <p class="search-intro">Find a room by ID, UID (e.g. u12345), tag, or text.</p>`;
+    const examples = hasQuery ? '' : `
+            <div class="search-examples" role="group" aria-label="Example searches">
+                <span class="search-examples-label">Try</span>
+                ${EXAMPLE_SEARCHES.map(buildExampleChip).join('')}
+            </div>`;
+    
     return `
-        <div class="search-forms">
-            <form id="basicSearchForm" class="search-basic-form" role="search" aria-label="Basic room search">
-                <label for="search" class="search-label">
-                    Search by: Room ID, UID (u12345), tag name, or text in room titles/descriptions
-                </label>
-                <input type="text" id="search" name="search" 
-                       class="search-input search-input-spaced"
-                       placeholder="Room Lich ID, Simu ID, or any search criteria"
-                       value="${escapeAttr(searchValue)}"
-                       aria-describedby="search-help">
-                <div id="search-help" class="sr-only">Enter a room ID number, UID starting with u, tag name, or any text to search in room titles and descriptions</div>
-                <button type="submit" class="search-button" aria-label="Search rooms">Search</button>
-            </form>
+        <header class="search-hero${hasQuery ? ' search-hero-compact' : ''}">${intro}
+            <h1 class="search-title">Lich Map Room Database</h1>${subtitle}
+            
+            <form id="basicSearchForm" class="search-hero-form" role="search" aria-label="Room search">
+                <label for="search" class="search-hero-label">Search rooms</label>
+                <div class="search-hero-row">
+                    <input type="text" id="search" name="search"
+                           class="search-input search-hero-input"
+                           placeholder="Room ID, UID, tag, or text"
+                           value="${escapeAttr(searchValue)}"
+                           autocomplete="off"
+                           aria-describedby="search-help">
+                    <button type="submit" class="search-hero-button" aria-label="Search rooms">Search</button>
+                </div>
+                <div id="search-help" class="sr-only">Enter a room ID, a UID starting with u, a tag name, or text from a room title or description.</div>
+            </form>${examples}
+        </header>
+    `;
+}
 
-            <hr class="search-divider">
+function buildExampleChip(example) {
+    const classes = `example-chip${example.mono ? ' example-chip-mono' : ''}`;
+    return `
+                <button type="button" class="${classes}" data-example="${escapeAttr(example.value)}"
+                        aria-label="${escapeAttr(`Search for ${example.value} (example ${example.kind})`)}">
+                    <span class="example-chip-value">${escapeHtml(example.value)}</span>
+                    <span class="example-chip-kind">${escapeHtml(example.kind)}</span>
+                </button>`;
+}
 
-            <form id="tagSearchForm" role="search" aria-label="Advanced tag and map search">
-                <fieldset class="search-fieldset">
-                    <legend class="search-label">Advanced Search by Tag and Map:</legend>
+// "Wehnimer's Landing - Town Map" under the "Wehnimer's Landing" heading reads better as "Town Map"
+function getTileLabel(category, mapName) {
+    const prefix = `${category} - `;
+    return mapName.startsWith(prefix) && mapName.length > prefix.length
+        ? mapName.slice(prefix.length)
+        : mapName;
+}
 
-                    <div class="search-field search-field-tag">
-                        <label for="tagInput" class="sr-only">Tag name</label>
-                        <input type="text" id="tagInput" class="search-input" placeholder="Start typing a tag..." autocomplete="off"
-                               aria-describedby="tag-help" aria-expanded="false" aria-autocomplete="both" role="combobox" aria-controls="tagSuggestions">
-                        <div id="tag-help" class="sr-only">Start typing to see available tags. Use arrow keys to navigate suggestions, Enter to select.</div>
-                        <ul id="tagSuggestions" class="tag-suggestions" tabindex="0" 
-                            role="listbox" aria-label="Tag suggestions"></ul>
+// Browsable grid of every map, grouped by category. Tiles are real links to the map's room,
+// so keyboard, middle-click and "copy link" all work. Big categories start collapsed.
+function buildMapBrowser(mapCategories) {
+    if (!mapCategories.length) return '';
+    
+    // "Other" is a catch-all with hundreds of maps, so it goes last
+    const ordered = [...mapCategories].sort((a, b) => (a[0] === 'Other') - (b[0] === 'Other'));
+    const totalMaps = ordered.reduce((sum, [, maps]) => sum + maps.length, 0);
+    
+    let categoriesHTML = '';
+    for (const [category, maps] of ordered) {
+        const isOpen = maps.length <= MAP_CATEGORY_OPEN_LIMIT;
+        const tiles = maps.map(([mapName, roomId]) => `
+                        <li>
+                            <a href="#/room/${escapeAttr(roomId)}" class="map-tile"
+                               data-name="${escapeAttr(`${category} ${mapName}`.toLowerCase())}"
+                               title="${escapeAttr(mapName)}">${escapeHtml(getTileLabel(category, mapName))}</a>
+                        </li>`).join('');
+        
+        categoriesHTML += `
+                <details class="map-category"${isOpen ? ' open' : ''} data-default-open="${isOpen}">
+                    <summary>
+                        <span class="map-category-name">${escapeHtml(category)}</span>
+                        <span class="map-category-count">${maps.length} ${maps.length === 1 ? 'map' : 'maps'}</span>
+                    </summary>
+                    <ul class="map-tile-grid" role="list" aria-label="${escapeAttr(`${category} maps`)}">${tiles}
+                    </ul>
+                </details>`;
+    }
+    
+    return `
+            <section class="map-browser" aria-labelledby="map-browser-heading">
+                <div class="map-browser-header">
+                    <h2 id="map-browser-heading" class="search-section-heading">Browse maps</h2>
+                    <div class="map-filter">
+                        <label for="map-filter" class="sr-only">Filter maps</label>
+                        <input type="text" id="map-filter" class="map-filter-input" placeholder="Filter ${totalMaps} maps"
+                               autocomplete="off" aria-controls="map-browser-list">
                     </div>
+                </div>
+                <div id="map-browser-list">${categoriesHTML}
+                </div>
+                <p id="map-filter-empty" class="map-filter-empty" hidden></p>
+            </section>
+    `;
+}
 
-                    <div class="search-field">
-                        <label for="imageSelect" class="sr-only">Map image</label>
-                        <select id="imageSelect" class="search-select" disabled aria-describedby="image-help">
-                            <option value="">Select a map...</option>
-                        </select>
-                        <div id="image-help" class="sr-only">Choose a map image that contains the selected tag</div>
-                    </div>
-
-                    <div class="search-field">
-                        <label for="locationSelect" class="sr-only">Location within map</label>
-                        <select id="locationSelect" class="search-select" disabled aria-describedby="location-help">
-                            <option value="">Select a location (optional)...</option>
-                        </select>
-                        <div id="location-help" class="sr-only">Optionally narrow down to a specific location within the selected map</div>
-                    </div>
-
-                    <button type="submit" id="tagSearchButton" class="search-button" disabled aria-label="Go to selected map location">Go to Map</button>
-                </fieldset>
-            </form>
-        </div>
+// Secondary search: tag, then map, then optional location. On the landing it sits directly
+// under the hero inside .search-deck, so the two search modes read as one block; with results
+// showing it moves below them. The ids below are what
+// initTagSearch() (tag-search.js) looks up, so they must not change.
+function buildTagPanel() {
+    return `
+            <section class="tag-panel" aria-labelledby="tag-panel-heading">
+                <div class="tag-panel-header">
+                    <h2 id="tag-panel-heading" class="search-section-heading tag-panel-heading">Find a tag on a map</h2>
+                    <p class="tag-panel-hint">Pick a tag, then a map, to see where its rooms are highlighted.</p>
+                </div>
+                
+                <form id="tagSearchForm" role="search" aria-label="Tag and map search">
+                    <fieldset class="search-fieldset">
+                        <legend class="sr-only">Tag, map and location</legend>
+                        
+                        <div class="tag-search-grid">
+                            <div class="search-field search-field-tag">
+                                <label for="tagInput" class="sr-only">Tag name</label>
+                                <input type="text" id="tagInput" class="search-input" placeholder="Start typing a tag..." autocomplete="off"
+                                       aria-describedby="tag-help" aria-expanded="false" aria-autocomplete="both" role="combobox" aria-controls="tagSuggestions">
+                                <div id="tag-help" class="sr-only">Start typing to see available tags. Use arrow keys to navigate suggestions, Enter to select.</div>
+                                <ul id="tagSuggestions" class="tag-suggestions" tabindex="0" 
+                                    role="listbox" aria-label="Tag suggestions"></ul>
+                            </div>
+                            
+                            <div class="search-field">
+                                <label for="imageSelect" class="sr-only">Map image</label>
+                                <select id="imageSelect" class="search-select" disabled aria-describedby="image-help">
+                                    <option value="">Map...</option>
+                                </select>
+                                <div id="image-help" class="sr-only">Choose a map image that contains the selected tag</div>
+                            </div>
+                            
+                            <div class="search-field">
+                                <label for="locationSelect" class="sr-only">Location within map</label>
+                                <select id="locationSelect" class="search-select" disabled aria-describedby="location-help">
+                                    <option value="">Location (optional)...</option>
+                                </select>
+                                <div id="location-help" class="sr-only">Optionally narrow down to a specific location within the selected map</div>
+                            </div>
+                            
+                            <button type="submit" id="tagSearchButton" class="search-button tag-panel-button" disabled>Show on map</button>
+                        </div>
+                    </fieldset>
+                </form>
+            </section>
     `;
 }
 
 function initSearchInteractions(queryParams) {
-    allTagsCache = getAllTags();
-    
-    const mapDropdown = document.getElementById('map_dropdown');
-    if (mapDropdown) {
-        mapDropdown.addEventListener('change', () => {
-            const selectedRoomId = mapDropdown.value;
-            if (selectedRoomId) {
-                navigate(`/room/${selectedRoomId}`);
-            }
-        });
-    }
+    wireMapDropdown(document.getElementById('map_dropdown'), navigate);
     
     const basicSearchForm = document.getElementById('basicSearchForm');
     if (basicSearchForm) {
@@ -213,358 +276,72 @@ function initSearchInteractions(queryParams) {
         });
     }
     
-    initTagAutocomplete();
-    initCascadingDropdowns();
-}
-
-// Exact matches first, then prefix matches, then substring matches.
-// meta: tags are internal bookkeeping, so they only appear when the user types "meta".
-function rankTagSuggestions(query) {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    
-    const includeMeta = q.startsWith('meta');
-    const exact = [];
-    const prefix = [];
-    const substring = [];
-    
-    for (const tag of allTagsCache) {
-        if (!includeMeta && tag.startsWith('meta:')) continue;
-        const lower = tag.toLowerCase();
-        if (lower === q) {
-            exact.push(tag);
-        } else if (lower.startsWith(q)) {
-            prefix.push(tag);
-        } else if (lower.includes(q)) {
-            substring.push(tag);
-        }
-    }
-    
-    return [...exact, ...prefix, ...substring];
-}
-
-function initTagAutocomplete() {
-    const tagInput = document.getElementById('tagInput');
-    const tagSuggestions = document.getElementById('tagSuggestions');
-    let selectedIndex = -1;
-    
-    if (!tagInput || !tagSuggestions) return;
-    
-    // Build the per-tag room counts while the browser is idle, not on the first keystroke
-    setTimeout(getTagRoomCounts, 0);
-    
-    tagInput.addEventListener('input', function() {
-        resolvedTag = '';
-        resetDropdowns();
-        
-        const matches = rankTagSuggestions(this.value);
-        if (matches.length > 0) {
-            showSuggestions(matches, this.value, tagSuggestions, tagInput);
-            selectedIndex = -1;
-        } else {
-            hideSuggestions(tagSuggestions, tagInput);
-        }
-    });
-    
-    tagInput.addEventListener('keydown', function(e) {
-        // Tabbing away with a full tag typed: load the maps first so the (now enabled)
-        // map select is the next stop instead of being skipped while disabled
-        if (e.key === 'Tab' && !e.shiftKey) {
-            resolveExactTag(tagInput);
-        }
-        
-        const isVisible = tagSuggestions.classList.contains('visible');
-        if (!isVisible) return;
-        
-        const items = tagSuggestions.querySelectorAll('.suggestion-item');
-        
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-                updateHighlight(items, selectedIndex, tagInput);
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                selectedIndex = Math.max(selectedIndex - 1, -1);
-                updateHighlight(items, selectedIndex, tagInput);
-                break;
-            case 'Enter':
-                e.preventDefault();
-                // Nothing highlighted: take the first suggestion (an exact match is ranked first)
-                if (items.length > 0) {
-                    const target = selectedIndex >= 0 && selectedIndex < items.length
-                        ? items[selectedIndex]
-                        : items[0];
-                    selectTag(target.dataset.tag);
-                }
-                break;
-            case 'Escape':
-                e.preventDefault();
-                hideSuggestions(tagSuggestions, tagInput);
-                break;
-        }
-    });
-    
-    tagInput.addEventListener('blur', function() {
-        setTimeout(() => {
-            if (document.activeElement !== tagInput && document.activeElement !== tagSuggestions) {
-                hideSuggestions(tagSuggestions, tagInput);
-                resolveExactTag(tagInput);
-            }
-        }, 150);
+    initExampleChips();
+    initMapBrowser();
+    initTagSearch({
+        tagInputId: 'tagInput',
+        suggestionsId: 'tagSuggestions',
+        imageSelectId: 'imageSelect',
+        locationSelectId: 'locationSelect',
+        submitButtonId: 'tagSearchButton',
+        formId: 'tagSearchForm',
+        onSubmit: navigateToTaggedRoom
     });
 }
 
-// Appends text to a node with the first occurrence of the query wrapped in <strong>.
-// Built from DOM nodes (textContent), so tag text is never parsed as HTML.
-function appendHighlightedText(parent, text, query) {
-    const q = query.trim().toLowerCase();
-    const start = q ? text.toLowerCase().indexOf(q) : -1;
-    
-    if (start === -1) {
-        parent.appendChild(document.createTextNode(text));
-        return;
-    }
-    
-    const end = start + q.length;
-    const strong = document.createElement('strong');
-    strong.className = 'suggestion-match';
-    strong.textContent = text.slice(start, end);
-    
-    parent.appendChild(document.createTextNode(text.slice(0, start)));
-    parent.appendChild(strong);
-    parent.appendChild(document.createTextNode(text.slice(end)));
-}
-
-function showSuggestions(tags, query, container, input) {
-    container.innerHTML = '';
-    input.removeAttribute('aria-activedescendant');
-    
-    const counts = getTagRoomCounts();
-    
-    tags.slice(0, MAX_TAG_SUGGESTIONS).forEach((tag, index) => {
-        const li = document.createElement('li');
-        li.className = 'suggestion-item';
-        li.dataset.tag = tag;
-        li.setAttribute('role', 'option');
-        li.setAttribute('id', `tag-option-${index}`);
-        li.setAttribute('aria-selected', 'false');
-        
-        const text = document.createElement('span');
-        text.className = 'suggestion-text';
-        appendHighlightedText(text, tag, query);
-        
-        const roomCount = counts.get(tag) || 0;
-        const count = document.createElement('span');
-        count.className = 'suggestion-count';
-        count.textContent = `${roomCount.toLocaleString()} ${roomCount === 1 ? 'room' : 'rooms'}`;
-        
-        li.appendChild(text);
-        li.appendChild(count);
-        
-        // Keep focus in the input while clicking, so the blur handler doesn't race the click
-        li.addEventListener('mousedown', (e) => {
-            e.preventDefault();
+// Example chips fill the box and run the search through the same URL path as the form,
+// so Back and bookmarks work for them too.
+function initExampleChips() {
+    const searchInput = document.getElementById('search');
+    document.querySelectorAll('.example-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const value = chip.dataset.example;
+            if (!value) return;
+            if (searchInput) searchInput.value = value;
+            announceToScreenReader(`Searching for ${value}`);
+            goToSearch(value, null);
         });
-        li.addEventListener('click', (e) => {
-            e.preventDefault();
-            selectTag(tag);
+    });
+}
+
+// Live filter for the map tiles: hides non-matching tiles and empty categories, and opens
+// every category that still has matches. Clearing the box restores the default open/closed state.
+function initMapBrowser() {
+    const filterInput = document.getElementById('map-filter');
+    const list = document.getElementById('map-browser-list');
+    const emptyMessage = document.getElementById('map-filter-empty');
+    if (!filterInput || !list || !emptyMessage) return;
+    
+    let timer = 0;
+    filterInput.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => filterMapTiles(filterInput.value, list, emptyMessage), 120);
+    });
+}
+
+function filterMapTiles(rawQuery, list, emptyMessage) {
+    const query = rawQuery.trim().toLowerCase();
+    let totalMatches = 0;
+    
+    list.querySelectorAll('.map-category').forEach(category => {
+        let matches = 0;
+        category.querySelectorAll('li').forEach(item => {
+            const tile = item.querySelector('.map-tile');
+            const isMatch = !query || tile.dataset.name.includes(query);
+            item.hidden = !isMatch;
+            if (isMatch) matches++;
         });
-        
-        container.appendChild(li);
+        category.hidden = matches === 0;
+        category.open = query ? matches > 0 : category.dataset.defaultOpen === 'true';
+        totalMatches += matches;
     });
     
-    container.classList.add('visible');
-    input.setAttribute('aria-expanded', 'true');
-    announceToScreenReader(tags.length > MAX_TAG_SUGGESTIONS
-        ? `${tags.length} suggestions available, showing the first ${MAX_TAG_SUGGESTIONS}`
-        : `${tags.length} suggestions available`);
-}
-
-function hideSuggestions(container, input) {
-    container.classList.remove('visible');
-    input.setAttribute('aria-expanded', 'false');
-    input.removeAttribute('aria-activedescendant');
-}
-
-function updateHighlight(items, selectedIndex, input) {
-    items.forEach((item, index) => {
-        if (index === selectedIndex) {
-            item.classList.add('selected');
-            item.setAttribute('aria-selected', 'true');
-            input.setAttribute('aria-activedescendant', item.id);
-        } else {
-            item.classList.remove('selected');
-            item.setAttribute('aria-selected', 'false');
-        }
-    });
+    emptyMessage.hidden = totalMatches > 0 || !query;
+    // textContent, so the typed text is never parsed as HTML
+    emptyMessage.textContent = query ? `No maps match "${rawQuery.trim()}". Try a shorter name.` : '';
     
-    if (selectedIndex === -1) {
-        input.removeAttribute('aria-activedescendant');
-    }
-}
-
-// Commits a tag: fills the input, closes the list and loads the dependent selects
-function applyTag(tag) {
-    const tagInput = document.getElementById('tagInput');
-    const tagSuggestions = document.getElementById('tagSuggestions');
-    
-    tagInput.value = tag;
-    resolvedTag = tag;
-    hideSuggestions(tagSuggestions, tagInput);
-    announceToScreenReader(`Selected tag: ${tag}. Loading available maps.`);
-    loadImagesForTag(tag);
-}
-
-function selectTag(tag) {
-    applyTag(tag);
-    document.getElementById('tagInput').focus();
-}
-
-// If the typed text is exactly a known tag (ignoring case), commit it without
-// needing a click on a suggestion. Returns true when a tag is committed.
-function resolveExactTag(input) {
-    const typed = input.value.trim().toLowerCase();
-    if (!typed) return false;
-    
-    const match = allTagsCache.find(tag => tag.toLowerCase() === typed);
-    if (!match) return false;
-    if (match === resolvedTag) return true;
-    
-    applyTag(match);
-    return true;
-}
-
-function resetDropdowns() {
-    const imageSelect = document.getElementById('imageSelect');
-    const locationSelect = document.getElementById('locationSelect');
-    const tagSearchButton = document.getElementById('tagSearchButton');
-    
-    imageSelect.innerHTML = '<option value="">Select a map...</option>';
-    imageSelect.disabled = true;
-    locationSelect.innerHTML = '<option value="">Select a location (optional)...</option>';
-    locationSelect.disabled = true;
-    tagSearchButton.disabled = true;
-}
-
-function initCascadingDropdowns() {
-    const imageSelect = document.getElementById('imageSelect');
-    const locationSelect = document.getElementById('locationSelect');
-    const tagSearchButton = document.getElementById('tagSearchButton');
-    const tagSearchForm = document.getElementById('tagSearchForm');
-    
-    if (!imageSelect) return;
-    
-    imageSelect.addEventListener('change', function() {
-        const selectedImage = this.value;
-        const tagInput = document.getElementById('tagInput');
-        
-        locationSelect.innerHTML = '<option value="">Select a location (optional)...</option>';
-        locationSelect.disabled = true;
-        
-        if (selectedImage) {
-            loadLocationsForTagAndImage(tagInput.value, selectedImage);
-            tagSearchButton.disabled = false;
-        } else {
-            tagSearchButton.disabled = true;
-        }
-    });
-    
-    if (tagSearchForm) {
-        tagSearchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const tagInput = document.getElementById('tagInput');
-            const tag = tagInput.value;
-            
-            // Full tag typed but never committed: commit it now (this may auto-select the map)
-            if (tag && !imageSelect.value) {
-                resolveExactTag(tagInput);
-            }
-            
-            const image = imageSelect.value;
-            const location = locationSelect.value;
-            
-            if (tag && image) {
-                navigateToTaggedRoom(tagInput.value, image, location);
-            } else if (tag && !imageSelect.disabled) {
-                announceToScreenReader('Select a map to continue');
-                imageSelect.focus();
-            } else if (tag) {
-                announceToScreenReader('Pick a tag from the suggestions first');
-            }
-        });
-    }
-}
-
-function loadImagesForTag(tag) {
-    const imageSelect = document.getElementById('imageSelect');
-    const allRooms = getAllRooms();
-    
-    const imagesWithTag = {};
-    
-    for (const room of allRooms) {
-        if (room.tags?.includes(tag) && room.image) {
-            if (!imagesWithTag[room.image]) {
-                imagesWithTag[room.image] = { filename: room.image, display_name: getMapDisplayName(room.image) };
-            }
-        }
-    }
-    
-    const images = Object.values(imagesWithTag).sort((a, b) => 
-        a.display_name.localeCompare(b.display_name)
-    );
-    
-    imageSelect.innerHTML = '<option value="">Select a map...</option>';
-    images.forEach(imageData => {
-        const option = document.createElement('option');
-        option.value = imageData.filename;
-        option.textContent = imageData.display_name;
-        imageSelect.appendChild(option);
-    });
-    imageSelect.disabled = false;
-    
-    if (images.length === 1) {
-        // Only one choice, so make it for the user; the change handler loads the locations
-        imageSelect.value = images[0].filename;
-        imageSelect.dispatchEvent(new Event('change'));
-        announceToScreenReader(`Tag "${tag}" is only on ${images[0].display_name}. That map is selected.`);
-    } else if (images.length > 0) {
-        announceToScreenReader(`Found ${images.length} maps containing tag "${tag}"`);
-    } else {
-        announceToScreenReader(`No maps found containing tag "${tag}"`);
-    }
-}
-
-function loadLocationsForTagAndImage(tag, image) {
-    const locationSelect = document.getElementById('locationSelect');
-    const allRooms = getAllRooms();
-    
-    const locations = new Set();
-    
-    for (const room of allRooms) {
-        const imageMatch = room.image === image;
-        const tagMatch = !tag || room.tags?.includes(tag);
-        
-        if (imageMatch && tagMatch && room.location) {
-            locations.add(room.location);
-        }
-    }
-    
-    const sortedLocations = Array.from(locations).sort();
-    
-    locationSelect.innerHTML = '<option value="">Select a location (optional)...</option>';
-    sortedLocations.forEach(location => {
-        const option = document.createElement('option');
-        option.value = location;
-        option.textContent = location;
-        locationSelect.appendChild(option);
-    });
-    locationSelect.disabled = false;
-    
-    if (sortedLocations.length > 0) {
-        announceToScreenReader(`Found ${sortedLocations.length} location${sortedLocations.length === 1 ? '' : 's'} in selected map`);
+    if (query) {
+        announceToScreenReader(`${totalMatches} ${totalMatches === 1 ? 'map matches' : 'maps match'}`);
     }
 }
 

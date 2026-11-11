@@ -1,0 +1,281 @@
+/* ==========================================================================
+   Design tokens: fonts, palette, Pico mapping
+   --------------------------------------------------------------------------
+   Visual direction: a restrained "cartographer's atlas". Warm parchment and ink
+   in light mode, a blue-black "ink-night" in dark mode, a deep indigo accent and
+   a small copper secondary. Colour and type only: no textures or ornament.
+
+   One :root block holds the light theme and ONE prefers-color-scheme: dark
+   block overrides the tokens that change. Components reference tokens with
+   var(--name) and never need their own dark-mode rule for colour.
+
+   Naming
+   - --static-*  same in light and dark (white text on a filled button, etc.)
+   - --hl-*      map highlight hues (amber / teal / violet). Fixed in both themes
+                 because they are drawn over the map art, which stays light.
+   - others      semantic roles (page, surface, border, text, accent, status, ...)
+
+   Load order: pico.min.css, tokens.css, room.css.
+   ========================================================================== */
+
+/* Self-hosted fonts (Latin subsets). font-display: swap shows system text first
+   and swaps when the file arrives, so text is never invisible. Paths are
+   relative to this file. */
+@font-face {
+    font-family: 'Fraunces';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/fraunces-400.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Fraunces';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../fonts/fraunces-600.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/jetbrains-mono-400.woff2') format('woff2');
+}
+
+:root {
+    /* Typefaces. Body and UI text stay on Pico's system sans (--font-family). */
+    --font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+    /* Page, accent and focus */
+    --page: #f6f1e7;
+    --accent: #2b4a8c;
+    --accent-selected: #2b4a8c;
+    --accent-fill: #2b4a8c;
+    --accent-fill-hover: #223a70;
+    --accent-fill-hover-lift: #223a70;
+    --accent-text-hover: #223a70;
+    --accent-tint: rgba(43, 74, 140, 0.1);
+    --focus-glow: rgba(43, 74, 140, 0.12);
+    --on-accent: #ffffff;
+    --copper: #a84b25;
+
+    /* Text */
+    --text: #1f2430;
+    --heading: #171b26;
+    --text-soft: #2b3040;
+    --text-secondary: #474b59;
+    --text-secondary-dim: #474b59;
+    --text-secondary-bright: #474b59;
+    --text-intro: #474b59;
+    --text-muted: #5e6371;
+    --text-faint: #8b8370;
+    --text-chip-hover: #1f2430;
+    --text-meta: #6a6558;
+    --text-meta-dim: #6a6558;
+    --text-disabled: #7a7566;
+    --select-option-text: #1f2430;
+
+    /* Surfaces */
+    --surface: #fdfbf6;
+    --surface-panel: #f8f4ea;
+    --surface-inset: #f3ecdd;
+    --surface-control: #f1ebdd;
+    --surface-chip: #eee6d4;
+    --surface-code: #efe8d8;
+    --surface-hover: #e8dfcb;
+    --surface-chip-hover: #e5dcc7;
+    --surface-tint: #e9ecf6;
+    --surface-tint-hover: #e3e8f5;
+    --surface-legacy: #f4eee0;
+    --surface-link-hover: #eef0f8;
+    --surface-disabled: #f1ebdd;
+    --surface-meter: #ddd4c0;
+
+    /* Borders */
+    --border: #e4dccb;
+    --border-control: #d3c9b3;
+    --border-panel: #d3c9b3;
+    --border-hover: #a89e86;
+    --border-chip-hover: #c0b59c;
+    --border-accent-hover: #c0b59c;
+    --border-faint: #efe8d8;
+    --border-faint-card: #efe8d8;
+    --border-result: #e4dccb;
+    --border-legacy: #d3c9b3;
+    --border-legacy-button: #d3c9b3;
+    --border-legacy-row: #ece4d2;
+
+    /* Status */
+    --danger-bg: #fef2f2;
+    --danger-border: #dc2626;
+    --danger-text: #c81e1e;
+    --danger-text-strong: #b91c1c;
+    --warning-bg: #fffbeb;
+    --warning-border: #d97706;
+    --warning-text: #92400e;
+    --unmapped-text: #8f3f1c;
+    --unmapped-fill: #a84b25;
+
+    /* Components */
+    --banner-bg: #2b4a8c;
+    --banner-action: #ffffff;
+    --banner-text: #ffffff;
+    --banner-border: transparent;
+    --spinner-head: #2b4a8c;
+    --spinner-track: rgba(0, 0, 0, 0.15);
+    --bar-track: rgba(0, 0, 0, 0.15);
+    --chip-info-bg: #e8ecf6;
+    --chip-info-text: #243d78;
+    --chip-info-border: #c5cde5;
+    --mark-bg: #fde68a;
+    --mark-text: #1f2937;
+    --tooltip-bg: #1c2233;
+    --tooltip-border: #0f1320;
+
+    /* Shadows */
+    --tooltip-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --toast-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    /* Focus ring (follows --accent in both themes) */
+    --focus-ring: var(--accent);
+
+    /* Static colours (identical in both themes) */
+    --static-white: #ffffff;
+    --static-black: #000000;
+    --static-accent: #2b4a8c;
+    --static-accent-hover: #223a70;
+    --static-accent-pressed: #1b2f5c;
+    --static-ink: #0f1420;
+    --static-code-bg: #151b27;
+    --static-success: #166534;
+    --static-yellow: #ffff00;
+    --static-grey-300: #cccccc;
+    --tooltip-text: #f7f3e9;
+    --tooltip-muted: #c9c2b0;
+
+    /* Map highlight hues (fixed; see note above) */
+    --hl-current: #f59e0b;
+    --hl-tag: #0f766e;
+    --hl-location: #6d28d9;
+    --hl-halo: rgba(0, 0, 0, 0.45);
+    --hl-inner: rgba(255, 255, 255, 0.85);
+    --hl-current-rgb: 245, 158, 11;
+    --hl-tag-rgb: 20, 184, 166;
+    --hl-location-rgb: 124, 58, 237;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --page: #0f1420;
+        --accent: #9fb4f2;
+        --accent-selected: #4a64bd;
+        --accent-fill: #4560b8;
+        --accent-fill-hover: #3a52a3;
+        --accent-fill-hover-lift: #5570c8;
+        --accent-text-hover: #c3d0fa;
+        --accent-tint: rgba(159, 180, 242, 0.15);
+        --focus-glow: rgba(159, 180, 242, 0.12);
+        --on-accent: #0f1420;
+        --copper: #e08a5f;
+        --text: #ece6d8;
+        --heading: #f6f1e6;
+        --text-soft: #d9d2c0;
+        --text-secondary: #cfc9b9;
+        --text-secondary-dim: #aaa493;
+        --text-secondary-bright: #ece6d8;
+        --text-intro: #c4bdac;
+        --text-muted: #a8a291;
+        --text-faint: #6f7a96;
+        --text-chip-hover: #f6f1e6;
+        --text-meta: #b7b09f;
+        --text-meta-dim: #a39d8c;
+        --text-disabled: #8a8474;
+        --select-option-text: #ece6d8;
+        --surface: #171e2d;
+        --surface-panel: #171e2d;
+        --surface-inset: #0d121c;
+        --surface-control: #1b2333;
+        --surface-chip: #263048;
+        --surface-code: #0d121c;
+        --surface-hover: #263048;
+        --surface-chip-hover: #323d5a;
+        --surface-tint: #1b2333;
+        --surface-tint-hover: #232c42;
+        --surface-legacy: #1b2333;
+        --surface-link-hover: #1f2840;
+        --surface-disabled: #0d121c;
+        --surface-meter: #2b3550;
+        --border: #263046;
+        --border-control: #38435f;
+        --border-panel: #263046;
+        --border-hover: #55607f;
+        --border-chip-hover: #55607f;
+        --border-accent-hover: #9fb4f2;
+        --border-faint: #263046;
+        --border-faint-card: #171e2d;
+        --border-result: #2b3550;
+        --border-legacy: #38435f;
+        --border-legacy-button: #3b4663;
+        --border-legacy-row: #263046;
+        --danger-bg: #2d1b1b;
+        --danger-border: #ef4444;
+        --danger-text: #fecaca;
+        --danger-text-strong: #fca5a5;
+        --warning-bg: #2d2416;
+        --warning-border: #f59e0b;
+        --warning-text: #fcd34d;
+        --unmapped-text: #f0a67e;
+        --unmapped-fill: #e08a5f;
+        --banner-bg: #1a2548;
+        --banner-action: #ece6d8;
+        --banner-text: #f4efe3;
+        --banner-border: #38487f;
+        --spinner-head: #ece6d8;
+        --spinner-track: rgba(255, 255, 255, 0.3);
+        --bar-track: rgba(255, 255, 255, 0.2);
+        --chip-info-bg: #1f2a4a;
+        --chip-info-text: #c9d4f7;
+        --chip-info-border: #34407a;
+        --mark-bg: #854d0e;
+        --mark-text: #fef3c7;
+        --tooltip-bg: #0a0e16;
+        --tooltip-border: #55607f;
+        --tooltip-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+        --toast-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+}
+
+/* Pico reads its own variables, so they are pointed at the tokens above.
+   The doubled :root raises specificity to match Pico's :root:not([data-theme])
+   rules; this file loads after Pico, so it wins. Theme changes need no extra
+   dark block here because the tokens already switch. */
+:root:root {
+    --background-color: var(--page);
+    --color: var(--text);
+    --h1-color: var(--heading);
+    --h2-color: var(--heading);
+    --h3-color: var(--heading);
+    --h4-color: var(--heading);
+    --h5-color: var(--heading);
+    --h6-color: var(--heading);
+    --muted-color: var(--text-muted);
+    --muted-border-color: var(--border);
+    --primary: var(--accent);
+    --primary-hover: var(--accent-text-hover);
+    --primary-focus: var(--focus-glow);
+    --primary-inverse: var(--on-accent);
+    --form-element-background-color: var(--surface);
+    --form-element-border-color: var(--border-control);
+    --form-element-color: var(--text);
+    --form-element-placeholder-color: var(--text-muted);
+    --form-element-disabled-background-color: var(--surface-disabled);
+    --form-element-disabled-border-color: var(--border);
+    --mark-background-color: var(--mark-bg);
+    --mark-color: var(--mark-text);
+    --code-background-color: var(--surface-code);
+    --code-color: var(--text-muted);
+}

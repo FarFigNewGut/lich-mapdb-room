@@ -1,13 +1,18 @@
 /**
- * Escapes HTML special characters to prevent XSS
+ * Escapes HTML special characters. Safe for text nodes AND for quoted attribute
+ * values: & < > " ' are all converted to entities. Encoded quotes render normally
+ * in text, so callers don't need a separate attribute escaper.
  * @param {string} str - String to escape
  * @returns {string} Escaped string
  */
 export function escapeHtml(str) {
     if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 /**

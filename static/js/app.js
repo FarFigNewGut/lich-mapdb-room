@@ -2,7 +2,8 @@ import { initData, getUpdatedAt, checkForUpdates, getMapCategories } from './dat
 import { init as initRouter, addRoute, setNotFound, handleRoute, navigate } from './router.js';
 import { renderRoom } from './room.js';
 import { renderSearch } from './search.js';
-import { setUpdatedAt, escapeHtml, announceToScreenReader } from './utils.js';
+import { setUpdatedAt, announceToScreenReader } from './utils.js';
+import { renderNotFound } from './shell.js';
 
 // Last 25% step announced to screen readers during a download
 let lastAnnouncedStep = 0;
@@ -120,50 +121,13 @@ async function main() {
         
         setNotFound((path) => {
             console.log('404:', path);
-            const mapCategories = getMapCategories();
-            let mapOptions = '<option value="">Navigate to map...</option>';
-            for (const [category, maps] of mapCategories) {
-                mapOptions += `<optgroup label="${escapeHtml(category)}">`;
-                for (const [mapName, roomId] of maps) {
-                    mapOptions += `<option value="${roomId}">${escapeHtml(mapName)}</option>`;
-                }
-                mapOptions += '</optgroup>';
-            }
-            
-            app.innerHTML = `
-                <a href="#main-content" class="skip-link">Skip to main content</a>
-                
-                <nav id="navigation" role="navigation" aria-label="Map navigation">
-                    <div id="navigation_header">
-                        <div id="map_navigation">
-                            <select id="map_dropdown" aria-label="Select a map to navigate to">${mapOptions}</select>
-                        </div>
-                    </div>
-                </nav>
-                
-                <main id="main-content" role="main" style="padding: 20px;">
-                    <h1>Page Not Found</h1>
-                    <p>The page <strong>${escapeHtml(path)}</strong> does not exist.</p>
-                    <p style="margin-top: 15px;">
-                        <a href="#/search" style="font-weight: bold;">← Go to search</a>
-                    </p>
-                    <footer id="updated_at" role="contentinfo" style="margin-top: 30px;">
-                        <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
-                    </footer>
-                </main>
-            `;
-            
-            const mapDropdown = document.getElementById('map_dropdown');
-            if (mapDropdown) {
-                mapDropdown.addEventListener('change', () => {
-                    const selectedRoomId = mapDropdown.value;
-                    if (selectedRoomId) {
-                        navigate(`/room/${selectedRoomId}`);
-                    }
-                });
-            }
-            
-            document.title = 'Page Not Found - Lich Map Room Database';
+            renderNotFound(path, {
+                kind: 'page',
+                app,
+                mapCategories: getMapCategories(),
+                updatedAt: getUpdatedAt(),
+                navigate
+            });
         });
         
         loadingScreen.classList.add('hidden');
@@ -194,13 +158,13 @@ let lastUpdateCheckAt = 0;
 // updates. Re-check on an hourly timer and whenever the tab regains focus
 // (throttled), and stop once an update has been found.
 async function runUpdateCheck() {
-    if (document.getElementById('update-banner')) {
+    if (document.getElementById('update-toast')) {
         return true;
     }
     lastUpdateCheckAt = Date.now();
     const updateCheck = await checkForUpdates();
     if (updateCheck.hasUpdate) {
-        showUpdateBanner();
+        showUpdateToast();
         return true;
     }
     return false;
@@ -226,29 +190,31 @@ function scheduleUpdateChecks() {
     setTimeout(runUpdateCheck, 5000);
 }
 
-function showUpdateBanner() {
-    if (document.getElementById('update-banner')) return;
+// A bottom toast, not a top bar, so it never covers the nav or map controls.
+// It is inserted without taking focus; role="alert" makes screen readers announce it.
+function showUpdateToast() {
+    if (document.getElementById('update-toast')) return;
     
-    const banner = document.createElement('div');
-    banner.id = 'update-banner';
-    banner.className = 'update-banner';
-    banner.setAttribute('role', 'alert');
-    banner.innerHTML = `
-        <span>Room data has been updated. Refresh to see the latest changes.</span>
-        <div class="update-banner-actions">
-            <button type="button" class="update-banner-refresh">Refresh</button>
-            <button type="button" class="update-banner-dismiss">Dismiss</button>
+    const toast = document.createElement('div');
+    toast.id = 'update-toast';
+    toast.className = 'update-toast';
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <span class="update-toast-message">Room data has been updated. Refresh to see the latest changes.</span>
+        <div class="update-toast-actions">
+            <button type="button" class="update-toast-refresh">Refresh</button>
+            <button type="button" class="update-toast-dismiss">Dismiss</button>
         </div>
     `;
     
-    banner.querySelector('.update-banner-refresh').addEventListener('click', () => {
+    toast.querySelector('.update-toast-refresh').addEventListener('click', () => {
         location.reload();
     });
-    banner.querySelector('.update-banner-dismiss').addEventListener('click', () => {
-        banner.remove();
+    toast.querySelector('.update-toast-dismiss').addEventListener('click', () => {
+        toast.remove();
     });
     
-    document.body.prepend(banner);
+    document.body.append(toast);
 }
 
 document.getElementById('loading-retry').addEventListener('click', () => {
