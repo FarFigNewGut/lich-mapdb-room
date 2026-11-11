@@ -274,7 +274,7 @@ function buildTagPanel() {
                             <div class="search-field">
                                 <label for="imageSelect" class="sr-only">Map image</label>
                                 <select id="imageSelect" class="search-select" disabled aria-describedby="image-help">
-                                    <option value="">Select a map...</option>
+                                    <option value="">Map...</option>
                                 </select>
                                 <div id="image-help" class="sr-only">Choose a map image that contains the selected tag</div>
                             </div>
@@ -282,7 +282,7 @@ function buildTagPanel() {
                             <div class="search-field">
                                 <label for="locationSelect" class="sr-only">Location within map</label>
                                 <select id="locationSelect" class="search-select" disabled aria-describedby="location-help">
-                                    <option value="">Select a location (optional)...</option>
+                                    <option value="">Location (optional)...</option>
                                 </select>
                                 <div id="location-help" class="sr-only">Optionally narrow down to a specific location within the selected map</div>
                             </div>
@@ -598,9 +598,9 @@ function resetDropdowns() {
     const locationSelect = document.getElementById('locationSelect');
     const tagSearchButton = document.getElementById('tagSearchButton');
     
-    imageSelect.innerHTML = '<option value="">Select a map...</option>';
+    imageSelect.innerHTML = '<option value="">Map...</option>';
     imageSelect.disabled = true;
-    locationSelect.innerHTML = '<option value="">Select a location (optional)...</option>';
+    locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
     locationSelect.disabled = true;
     tagSearchButton.disabled = true;
 }
@@ -617,7 +617,7 @@ function initCascadingDropdowns() {
         const selectedImage = this.value;
         const tagInput = document.getElementById('tagInput');
         
-        locationSelect.innerHTML = '<option value="">Select a location (optional)...</option>';
+        locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
         locationSelect.disabled = true;
         
         if (selectedImage) {
@@ -673,7 +673,7 @@ function loadImagesForTag(tag) {
         a.display_name.localeCompare(b.display_name)
     );
     
-    imageSelect.innerHTML = '<option value="">Select a map...</option>';
+    imageSelect.innerHTML = '<option value="">Map...</option>';
     images.forEach(imageData => {
         const option = document.createElement('option');
         option.value = imageData.filename;
@@ -711,7 +711,7 @@ function loadLocationsForTagAndImage(tag, image) {
     
     const sortedLocations = Array.from(locations).sort();
     
-    locationSelect.innerHTML = '<option value="">Select a location (optional)...</option>';
+    locationSelect.innerHTML = '<option value="">Location (optional)...</option>';
     sortedLocations.forEach(location => {
         const option = document.createElement('option');
         option.value = location;

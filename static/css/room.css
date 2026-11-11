@@ -1022,9 +1022,15 @@ h2.tag-panel-heading {
 
 .tag-search-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
     gap: 10px;
     align-items: start;
+}
+
+/* Tag input spans the full top row; map / location / button sit below it,
+   so the three narrower controls aren't cramped at the deck's width. */
+.tag-search-grid .search-field-tag {
+    grid-column: 1 / -1;
 }
 
 .search-field {
@@ -1044,6 +1050,11 @@ h2.tag-panel-heading {
     padding: 9px 12px;
     font-size: 14px;
     box-sizing: border-box;
+}
+
+/* Leave room for the native dropdown arrow so the option text never runs under it. */
+#main-content .tag-panel .search-select {
+    padding-right: 32px;
 }
 
 #main-content .tag-panel-button {
