@@ -743,10 +743,17 @@ article#full_info_article {
 }
 
 /* ----- Hero: wordmark, big search box, example chips ----- */
-.search-hero {
-    max-width: 760px;
+/* One block for both search modes: the hero and the tag panel share this width,
+   so the input row, the example chips and the panel edges line up. */
+.search-deck {
+    max-width: 820px;
     margin: 0 auto;
-    padding: 36px 0 20px;
+}
+
+.search-hero {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 36px 0 18px;
     text-align: center;
     animation: atlas-rise 0.45s ease-out backwards;
 }
@@ -974,18 +981,37 @@ ul.map-tile-grid a.map-tile:hover {
 }
 
 /* ----- Secondary panel: find a tag on a map ----- */
+/* Quieter than the hero: a panel-tinted strip with a small heading. With results showing it sits
+   below them (standalone), so it carries its own width and top margin. */
 .tag-panel {
-    margin-top: 32px;
-    padding: 20px 22px 22px;
+    max-width: 820px;
+    margin: 32px auto 0;
+    padding: 14px 18px 18px;
     border: 1px solid var(--border);
     border-radius: 12px;
-    background-color: var(--surface);
+    background-color: var(--surface-panel);
+}
+
+.search-deck .tag-panel {
+    margin-top: 14px;
+}
+
+.tag-panel-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 14px;
+    margin-bottom: 12px;
+}
+
+h2.tag-panel-heading {
+    font-size: 18px;
 }
 
 .tag-panel-hint {
-    margin: 4px 0 14px;
+    margin: 0;
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .search-fieldset {
@@ -1052,7 +1078,7 @@ ul.map-tile-grid a.map-tile:hover {
     }
 
     .tag-panel {
-        padding: 16px;
+        padding: 14px;
     }
 
     .tag-search-grid {

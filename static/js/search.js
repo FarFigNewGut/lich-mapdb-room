@@ -119,13 +119,23 @@ function buildSearchHTML(queryParams) {
         </nav>
         
         <main id="main-content" role="main" class="search-main">
+            ${hasQuery ? `
             ${buildSearchHero(queryParams, hasQuery)}
             
             <div id="search-results"></div>
             
-            ${hasQuery ? '' : buildMapBrowser(mapCategories)}
-            
             ${buildTagPanel()}
+            ` : `
+            <div class="search-deck">
+                ${buildSearchHero(queryParams, hasQuery)}
+                
+                ${buildTagPanel()}
+            </div>
+            
+            <div id="search-results"></div>
+            
+            ${buildMapBrowser(mapCategories)}
+            `}
             
             <footer id="updated_at" role="contentinfo" class="search-footer">
                 <small><i>MapDB last updated: ${escapeHtml(getUpdatedAt())}</i></small>
@@ -235,13 +245,17 @@ function buildMapBrowser(mapCategories) {
     `;
 }
 
-// Secondary search: tag, then map, then optional location. The ids below are what
+// Secondary search: tag, then map, then optional location. On the landing it sits directly
+// under the hero inside .search-deck, so the two search modes read as one block; with results
+// showing it moves below them. The ids below are what
 // initTagAutocomplete() and initCascadingDropdowns() look up, so they must not change.
 function buildTagPanel() {
     return `
             <section class="tag-panel" aria-labelledby="tag-panel-heading">
-                <h2 id="tag-panel-heading" class="search-section-heading">Find a tag on a map</h2>
-                <p class="tag-panel-hint">Pick a tag, then a map, to see where its rooms are highlighted.</p>
+                <div class="tag-panel-header">
+                    <h2 id="tag-panel-heading" class="search-section-heading tag-panel-heading">Find a tag on a map</h2>
+                    <p class="tag-panel-hint">Pick a tag, then a map, to see where its rooms are highlighted.</p>
+                </div>
                 
                 <form id="tagSearchForm" role="search" aria-label="Tag and map search">
                     <fieldset class="search-fieldset">
